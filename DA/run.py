@@ -617,10 +617,10 @@ total_prec100=[]
 for i in range(0,repetitions):
     history,model1=train(X_train,Y_train,X_val,Y_val,numEpochs,1,patience,lr,lr*1e-1,batch_size_value,schedule,model_name,optimizer_name,loss_acronym,max_pooling,train_encoder=train_encoder,preTrain=False,Denoising=False,pre_load_weights=True,pretrained_model=model,plot_history=True,bottleneck_freezing=bottleneck_freezing)
     # Evaluate the model on the test data using `evaluate`
-    model1.save((testName+'/Model100%Number'+str(i)+'.h5'))
+    model1.save((testName+'/lucchi_FineTunedModel'+str(i)+'.h5'))
     print('\n# Evaluate on test data with all training data in loop:',i)
     
-model1.save('lucchi_FineTunedModel.h5')
+
 
 import cv2
 #from SelfSupervisedLearning.general_functions import append_blackborder,append_pot2
@@ -642,18 +642,18 @@ try:
 
     file1.close() #to change file access modes
 except:
-    print('No se ha podido copiar en el txt la función evaluate')
+    print('No se ha podido copiar en el txt la función evaluate en el dataset 1')
 IoU_Lucchi2Kashturi=[]
 total_seg100=[]
 for i in range(0,len(X_test)):
   #print('Evaluating test image',i)
   normalizedImg = X_test[i][:,:,:]
   prediction = model1.predict(normalizedImg[np.newaxis,:,:]);
-  image=prediction[0,:,:,:]>0.5;
+  image=prediction[0,:,:,:];
   
   IoU_Lucchi2Kashturi.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
 
-total_seg100.append(np.nanmean(IoU_Lucchi2Kashturi))
+total_seg100.append(np.mean(np.nan_to_num(IoU_Lucchi2Kashturi)))
 
 print('The average IoU in test set is: ',total_seg100)
 try:
@@ -697,9 +697,9 @@ for i in range(0,len(X_test)):
   #print('Evaluating test image',i)
   normalizedImg = X_test[i][:,:,:]
   prediction = model1.predict(normalizedImg[np.newaxis,:,:]);
-  image=prediction[0,:,:,:]>0.5;
+  image=prediction[0,:,:,:];
   
-  total_seg.append(jaccard_index_final(test_lbl[i]>0.5,image[:,:,0]));
+  total_seg.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
 
 total_seg2.append(np.nanmean(total_seg))
 
@@ -786,7 +786,7 @@ total_prec100=[]
 for i in range(0,repetitions):
     history,model2=train(X_train,Y_train,X_val,Y_val,numEpochs,1,patience,lr,lr*1e-1,batch_size_value,schedule,model_name,optimizer_name,loss_acronym,max_pooling,train_encoder=train_encoder,preTrain=False,Denoising=False,pre_load_weights=True,pretrained_model=model,plot_history=True,bottleneck_freezing=bottleneck_freezing)
     # Evaluate the model on the test data using `evaluate`
-    model2.save((testName+'/Model2%Number'+str(i)+'.h5'))
+    model2.save((testName+'/kashturi_FineTunedModel'+str(i)+'.h5'))
     print('\n# Evaluate on test data with all training data in loop:',i)
 
 X_test = [  np.expand_dims( append_pot2(x), axis=-1 )  for x in test_img2 ];
@@ -801,15 +801,22 @@ for i in range(0,len(X_test)):
   prediction = model2.predict(normalizedImg[np.newaxis,:,:]);
   image=prediction[0,:,:,:];
   
-  total_seg.append(jaccard_index_final(test_lbl[i]>0.5,image[:,:,0]));
+  total_seg.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
 
-total_seg100.append(np.nanmean(total_seg))
+total_seg100.append(np.nanmean(np.nan_to_num(total_seg)))
 
 print('The average SEG in test set is: ',total_seg100)
+try:
+    file1 = open(testName+'.txt',"w")
+    file1.write('Kashturi-Kashturi IoU:')
+    file1.write(total_seg100)
 
+    file1.close() #to change file access modes
+except:
+    print('No se ha podido copiar en el txt el IoU en el dataset 2')
 #@title
 predictions=[]
-for i in range(0,len(X_test)):
+for i in range(0,len(X_test[0:5])):
       #print('Evaluating test image',i)
       normalizedImg = X_test[i][:,:,:]
       prediction = model2.predict(normalizedImg[np.newaxis,:,:]);
@@ -823,12 +830,12 @@ plt.subplot(2,2,2)
 plt.imshow(test_lbl[0][:,:])
 plt.title('GT labels')
 plt.subplot(2,2,3)
-plt.imshow(predictions[1][:,:,0])
+plt.imshow(predictions[3][:,:,0])
 plt.title('Predicted labels')
 plt.subplot(2,2,4)
-plt.imshow(test_lbl[1][:,:])
+plt.imshow(test_lbl[3][:,:])
 plt.title('GT labels')
-plt.savefig('Model1Predictions1.png')
+plt.savefig('Model_Kashturi_Predictions_Kashturi.png')
 
 X_test = [  np.expand_dims( append_pot2(x), axis=-1 )  for x in test_img1 ];
 Y_test = [  append_pot2(x)  for x in test_lbl1 ];
@@ -841,7 +848,7 @@ for i in range(0,len(X_test)):
   #print('Evaluating test image',i)
   normalizedImg = X_test[i][:,:,:]
   prediction = model2.predict(normalizedImg[np.newaxis,:,:]);
-  image=prediction[0,:,:,:]>0.5;
+  image=prediction[0,:,:,:];
   
   total_seg.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
 
@@ -870,11 +877,11 @@ plt.title('Predicted labels')
 plt.subplot(2,2,4)
 plt.imshow(test_lbl[1])
 plt.title('GT labels')
-plt.savefig('Model1Predictions2.png')
+plt.savefig('Model_Kashturi_Predictions_Lucchi++.png')
 
 import pandas as pd
 from datetime import date
 
- 
-summary = pd.DataFrame(columns=['Fecha','Experimento','numEpochs Pretrain','Patience Pretrain','lr Pretrain','Batch size Pretrain','schedule Pretrain','model name Pretrain','Optimizer Pretrain','loss  Pretrain','maxpooling Pretrain','numEpochs  ','Patience  ','lr  ','Batch size  ','schedule  ','model name  ','Optimizer  ','loss   ','maxpooling  ','Repetitions','train encoder','bottleneck freezing','Super Resolution train','Super Resolution val','Super Resolution test','Seg train','Seg val','Seg test','Style transfer train','Style transfer val','Style transfer test'])
-experiment={'Fecha':date.today(),'Experimento':testName,'numEpochs Pretrain':numEp
+
+#summary = pd.DataFrame(columns=['Fecha','Experimento','numEpochs Pretrain','Patience Pretrain','lr Pretrain','Batch size Pretrain','schedule Pretrain','model name Pretrain','Optimizer Pretrain','loss  Pretrain','maxpooling Pretrain','numEpochs  ','Patience  ','lr  ','Batch size  ','schedule  ','model name  ','Optimizer  ','loss   ','maxpooling  ','Repetitions','train encoder','bottleneck freezing','Super Resolution train','Super Resolution val','Super Resolution test','Seg train','Seg val','Seg test','Style transfer train','Style transfer val','Style transfer test'])
+#experiment={'Fecha':date.today(),'Experimento':testName,'numEpochs Pretrain':numEp
