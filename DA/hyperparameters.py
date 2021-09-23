@@ -7,24 +7,24 @@
 #GPU selection 
 GPU_availability=True
 show_images=False
-GPU="0"
+GPU="4"
 #Parameters to be modified:
 plot_history=False
 factor=4  #@param {type:"integer"}
 noise=0.2 #@param {type:"number"}
-testName='Prueba' #@param {type:'string'}
+testName='Test1' #@param {type:'string'}
 
  #@title **Pretraining Hyperparameters**
 
 # === PreTraining parameters ===
 # number of epochs
-numEpochsPretrain =  1#@param {type:"integer"}
+numEpochsPretrain =  200#@param {type:"integer"}
 # patience
-patiencePretrain =  1#@param {type:"integer"}
+patiencePretrain =  200#@param {type:"integer"}
 # learning rate
 lrPretrain = 5e-4 #@param {type:"number"}
 # batch size
-batch_size_valuePretrain =  20#@param {type:"integer"}
+batch_size_valuePretrain =  5#@param {type:"integer"}
 # use one-cycle policy for super-convergence? Reduce on plateau?
 no_schedule = None #@param {type:"raw"}
 schedulePretrain = 'no_schedule' #@param [ "no_schedule","'oneCycle'","'reduce'"] {type:"raw"}
@@ -41,13 +41,13 @@ max_poolingPretrain=True #@param {type:"boolean"}
 
 # === Training parameters ===
 # number of epochs
-numEpochs = 1 #@param {type:"integer"}
+numEpochs = 5 #@param {type:"integer"}
 # patience
-patience = 1 #@param {type:"integer"}
+patience = 5#@param {type:"integer"}
 # learning rate
 lr =5e-4 #@param {type:"number"}
 # batch size
-batch_size_value = 20#@param {type:"integer"}
+batch_size_value = 2#@param {type:"integer"}
 # use one-cycle policy for super-convergence? Reduce on plateau?
 schedule = no_schedule #@param [ "no_schedule","'oneCycle'","'reduce'"] {type:"raw"}
 # Network architecture: UNet, ResUNet,MobileNetEncoder
@@ -59,7 +59,7 @@ loss_acronym = 'BCE' #@param ['BCE','Dice','SEG']{type:"string"}
 # create the network and compile it with its optimizer
 max_pooling=True #@param {type:"boolean"}
 
-repetitions=1 #@param {type:"slider", min:1, max:30, step:1}
+repetitions=5 #@param {type:"slider", min:1, max:30, step:1}
 train_encoder=False #@param {type:"boolean"}
 bottleneck_freezing=True #@param {type:"boolean"}
 

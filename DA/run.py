@@ -638,7 +638,7 @@ total_seg100.append(np.mean(np.nan_to_num(IoU_Lucchi2Kashturi)))
 print('The average IoU in test set is: ',total_seg100)
 try:
     file1 = open(testName+'.txt',"a")
-    file1.write('Lucchi-Lucchi IoU:'+ str(total_seg100))
+    file1.write('Lucchi-Lucchi IoU:'+ str(np.mean(total_seg100))+'\n')
 
     
 except:
@@ -685,7 +685,16 @@ for i in range(0,len(X_test)):
 total_seg2.append(np.nanmean(total_seg))
 
 print('The average IoU in test set is: ',np.mean(total_seg2))
+try:
+    file1 = open(testName + '.txt',"a")
+    file1.write('Lucchi-Kashturi IoU:')
+    file1.write(str(np.mean(total_seg2))+'\n')
 
+   
+except:
+    print('No se ha podido copiar en el txt el IoU en el dataset 2')
+#@title
+file1.close() #to change file access modes
 #@title
 predictions=[]
 for i in range(0,len(X_test)):
@@ -790,12 +799,13 @@ print('The average SEG in test set is: ',total_seg100)
 try:
     file1 = open(testName + '.txt',"a")
     file1.write('Kashturi-Kashturi IoU:')
-    file1.write(np.mean(total_seg100))
+    file1.write(str(np.mean(total_seg100))+'\n')
 
-    file1.close() #to change file access modes
+   
 except:
     print('No se ha podido copiar en el txt el IoU en el dataset 2')
 #@title
+file1.close() #to change file access modes
 predictions=[]
 for i in range(0,len(X_test[0:5])):
       #print('Evaluating test image',i)
@@ -834,17 +844,17 @@ for i in range(0,len(X_test)):
   total_seg.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
 
 total_seg2.append(np.nanmean(total_seg))
-
 print('The average SEG in test set is: ',np.mean(total_seg2))
 try:
     file1 = open(testName + '.txt',"a")
     file1.write('Kashturi-Lucchi++ IoU:')
-    file1.write(np.mean(total_seg2))
+    file1.write(str(np.mean(total_seg2))+'\n')
 
-    file1.close() #to change file access modes
+    
 except:
     print('No se ha podido copiar en el txt el IoU en el dataset 2')
 #@title
+file1.close() #to change file access modes
 predictions=[]
 for i in range(0,len(X_test)):
     #print('Evaluating test image',i)
@@ -863,7 +873,7 @@ plt.subplot(2,2,3)
 plt.imshow(predictions[1][:,:,0])
 plt.title('Predicted labels')
 plt.subplot(2,2,4)
-plt.imshow(test_lbl[1])
+plt.imshow(test_lbl[1]),
 plt.title('GT labels')
 plt.savefig('Model_Kashturi_Predictions_Lucchi++.png')
 
