@@ -5,26 +5,26 @@
 
 #@markdown ---
 #GPU selection 
-GPU_availability=False
+GPU_availability=True
 show_images=False
 GPU="0"
 #Parameters to be modified:
 plot_history=False
 factor=4  #@param {type:"integer"}
 noise=0.2 #@param {type:"number"}
-testName='EM_Seg' #@param {type:'string'}
+testName='Prueba' #@param {type:'string'}
 
  #@title **Pretraining Hyperparameters**
 
 # === PreTraining parameters ===
 # number of epochs
-numEpochsPretrain =  200#@param {type:"integer"}
+numEpochsPretrain =  1#@param {type:"integer"}
 # patience
-patiencePretrain =  200#@param {type:"integer"}
+patiencePretrain =  1#@param {type:"integer"}
 # learning rate
 lrPretrain = 5e-4 #@param {type:"number"}
 # batch size
-batch_size_valuePretrain =  5#@param {type:"integer"}
+batch_size_valuePretrain =  20#@param {type:"integer"}
 # use one-cycle policy for super-convergence? Reduce on plateau?
 no_schedule = None #@param {type:"raw"}
 schedulePretrain = 'no_schedule' #@param [ "no_schedule","'oneCycle'","'reduce'"] {type:"raw"}
@@ -41,13 +41,13 @@ max_poolingPretrain=True #@param {type:"boolean"}
 
 # === Training parameters ===
 # number of epochs
-numEpochs = 10 #@param {type:"integer"}
+numEpochs = 1 #@param {type:"integer"}
 # patience
-patience = 10 #@param {type:"integer"}
+patience = 1 #@param {type:"integer"}
 # learning rate
 lr =5e-4 #@param {type:"number"}
 # batch size
-batch_size_value = 1#@param {type:"integer"}
+batch_size_value = 20#@param {type:"integer"}
 # use one-cycle policy for super-convergence? Reduce on plateau?
 schedule = no_schedule #@param [ "no_schedule","'oneCycle'","'reduce'"] {type:"raw"}
 # Network architecture: UNet, ResUNet,MobileNetEncoder
@@ -65,13 +65,13 @@ bottleneck_freezing=True #@param {type:"boolean"}
 
 
 # Paths to the initial training images and their corresponding labels
-train_input_path1 = 'Lucchi++/Train_In'
-train_label_path1 = 'Lucchi++/Train_Out'
-test_input_path1 = 'Lucchi++/Test_In'
-test_label_path1 = 'Lucchi++/Test_Out'
+train_input_path1 = 'Lucchi++/train/x'
+train_label_path1 = 'Lucchi++/train/y'
+test_input_path1 = 'Lucchi++/test/x'
+test_label_path1 = 'Lucchi++/test/y'
 
 
-train_input_path2 = 'Kasthuri++/Train_In'
-train_label_path2 = 'Kasthuri++/Train_Out'
-test_input_path2 = 'Kasthuri++/Test_In'
-test_label_path2 = 'Kasthuri++/Test_Out'
+train_input_path2 = 'Kasthuri++/train/x'
+train_label_path2 = 'Kasthuri++/train/y'
+test_input_path2 = 'Kasthuri++/test/x'
+test_label_path2 = 'Kasthuri++/test/y'

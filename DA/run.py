@@ -10,10 +10,11 @@ from tensorflow_examples.models.pix2pix import pix2pix
 import numpy as np
 import os
 import random
-
+print('Se ha cargado las dependencias correctamente')
 if GPU_availability:
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID";
     os.environ["CUDA_VISIBLE_DEVICES"] = GPU;
+print('Se ha seleccionado la GPU:',GPU)
 
 try:
   os.mkdir(testName)
@@ -42,24 +43,10 @@ print( tf.__version__ )
 #@title
 import os
 
-
+print('Cargando los data sets...')
 # Read the list of file names
 train_input_filenames1 = [x for x in os.listdir( train_input_path1 ) if x.endswith(".png")]
 train_input_filenames1.sort()
-for x in os.listdir(train_label_path1):
-  #string must be 8 digits long so we add 0s up to 8 digits
-   
-    x_old=x
-    while len(x)!=8:
-      x=str('0'+x)
-    os.rename(train_label_path1+'/'+x_old,train_label_path1+'/'+str(x))
-for x in os.listdir(test_label_path1):
-  #string must be 8 digits long so we add 0s up to 8 digits
-   
-    x_old=x
-    while len(x)!=8:
-      x=str('0'+x)
-    os.rename(test_label_path1+'/'+x_old,test_label_path1+'/'+str(x))
 
 train_label_filenames1 = [x for x in os.listdir( train_label_path1 ) if x.endswith(".png")]
 train_label_filenames1.sort()
@@ -467,11 +454,11 @@ ssim_mean_noise = np.mean(ssim_array_noise)
 
 print("PSNR original:", psnr_mean_noise)
 print("SSIM original:", ssim_mean_noise)
-file1 = open(testName+'.txt',"w")
+file1 = open(testName+'.txt',"a")
 
 # \n is placed to indicate EOL (End of Line)
 file1.write("PSNR original: "+ str(psnr_mean_noise)+'\n')
-file1.write("SSIM original:", str(ssim_mean_noise)+'\n')
+file1.write("SSIM original:"+ str(ssim_mean_noise)+'\n')
 file1.close() #to change file access modes
   
 #Evaluar métricas denoising sobre entrenamiento, validación y test
@@ -495,10 +482,10 @@ ssim_mean = np.mean(ssim_array)
 print("PSNR reconstructed:", psnr_mean)
 print("SSIM reconstructed:", ssim_mean)
 # \n is placed to indicate EOL (End of Line)
-file1 = open(testName+'.txt',"w")
+file1 = open(testName+'.txt',"a")
 
 file1.write("PSNR reconstructed: "+ str(psnr_mean)+'\n')
-file1.write("SSIM reconstructed:", str(ssim_mean)+'\n')
+file1.write("SSIM reconstructed:"+ str(ssim_mean)+'\n')
 file1.close() #to change file access modes
   
 """Now it would be interesting to visualize our output data to check what does the output of our net look like. """
@@ -615,7 +602,7 @@ total_prec100=[]
 #from SelfSupervisedLearning.DenoiSeg_functions import threshold_optimization
 
 for i in range(0,repetitions):
-    history,model1=train(X_train,Y_train,X_val,Y_val,numEpochs,1,patience,lr,lr*1e-1,batch_size_value,schedule,model_name,optimizer_name,loss_acronym,max_pooling,train_encoder=train_encoder,preTrain=False,Denoising=False,pre_load_weights=True,pretrained_model=model,plot_history=True,bottleneck_freezing=bottleneck_freezing)
+    history,model1=train(X_train,Y_train,X_val,Y_val,numEpochs,1,patience,lr,lr*1e-1,batch_size_value,schedule,model_name,optimizer_name,loss_acronym,max_pooling,train_encoder=train_encoder,preTrain=False,Denoising=False,pre_load_weights=True,pretrained_model=model,plot_history=plot_history,bottleneck_freezing=bottleneck_freezing)
     # Evaluate the model on the test data using `evaluate`
     model1.save((testName+'/lucchi_FineTunedModel'+str(i)+'.h5'))
     print('\n# Evaluate on test data with all training data in loop:',i)
@@ -635,14 +622,7 @@ Y_test = np.asarray(Y_test)
 Y_test = np.expand_dims( Y_test, axis=-1 )
 
 model1.evaluate(x=X_test,y=Y_test)
-try:
-    file1 = open(testName+'.txt',"w")
-    file1.write('Lucchi-Lucchi evaluation:')
-    file1.write(model1.evaluate(x=X_test,y=Y_test))
 
-    file1.close() #to change file access modes
-except:
-    print('No se ha podido copiar en el txt la función evaluate en el dataset 1')
 IoU_Lucchi2Kashturi=[]
 total_seg100=[]
 for i in range(0,len(X_test)):
@@ -657,13 +637,14 @@ total_seg100.append(np.mean(np.nan_to_num(IoU_Lucchi2Kashturi)))
 
 print('The average IoU in test set is: ',total_seg100)
 try:
-    file1 = open(testName+'.txt',"w")
-    file1.write('Lucchi-Lucchi IoU:'+str(total_seg100))
+    file1 = open(testName+'.txt',"a")
+    file1.write('Lucchi-Lucchi IoU:'+ str(total_seg100))
 
-    file1.close() #to change file access modes
+    
 except:
     print('No se ha podido copiar en el txt el IoU')
 #@title
+file1.close() #to change file access modes
 predictions=[]
 for i in range(0,len(X_test[0:5])):
       #print('Evaluating test image',i)
@@ -784,7 +765,7 @@ total_prec100=[]
 #from SelfSupervisedLearning.DenoiSeg_functions import threshold_optimization
 
 for i in range(0,repetitions):
-    history,model2=train(X_train,Y_train,X_val,Y_val,numEpochs,1,patience,lr,lr*1e-1,batch_size_value,schedule,model_name,optimizer_name,loss_acronym,max_pooling,train_encoder=train_encoder,preTrain=False,Denoising=False,pre_load_weights=True,pretrained_model=model,plot_history=True,bottleneck_freezing=bottleneck_freezing)
+    history,model2=train(X_train,Y_train,X_val,Y_val,numEpochs,1,patience,lr,lr*1e-1,batch_size_value,schedule,model_name,optimizer_name,loss_acronym,max_pooling,train_encoder=train_encoder,preTrain=False,Denoising=False,pre_load_weights=True,pretrained_model=model,plot_history=plot_history,bottleneck_freezing=bottleneck_freezing)
     # Evaluate the model on the test data using `evaluate`
     model2.save((testName+'/kashturi_FineTunedModel'+str(i)+'.h5'))
     print('\n# Evaluate on test data with all training data in loop:',i)
@@ -807,9 +788,9 @@ total_seg100.append(np.nanmean(np.nan_to_num(total_seg)))
 
 print('The average SEG in test set is: ',total_seg100)
 try:
-    file1 = open(testName+'.txt',"w")
+    file1 = open(testName + '.txt',"a")
     file1.write('Kashturi-Kashturi IoU:')
-    file1.write(total_seg100)
+    file1.write(np.mean(total_seg100))
 
     file1.close() #to change file access modes
 except:
@@ -855,7 +836,14 @@ for i in range(0,len(X_test)):
 total_seg2.append(np.nanmean(total_seg))
 
 print('The average SEG in test set is: ',np.mean(total_seg2))
+try:
+    file1 = open(testName + '.txt',"a")
+    file1.write('Kashturi-Lucchi++ IoU:')
+    file1.write(np.mean(total_seg2))
 
+    file1.close() #to change file access modes
+except:
+    print('No se ha podido copiar en el txt el IoU en el dataset 2')
 #@title
 predictions=[]
 for i in range(0,len(X_test)):
@@ -879,9 +867,5 @@ plt.imshow(test_lbl[1])
 plt.title('GT labels')
 plt.savefig('Model_Kashturi_Predictions_Lucchi++.png')
 
-import pandas as pd
-from datetime import date
 
 
-#summary = pd.DataFrame(columns=['Fecha','Experimento','numEpochs Pretrain','Patience Pretrain','lr Pretrain','Batch size Pretrain','schedule Pretrain','model name Pretrain','Optimizer Pretrain','loss  Pretrain','maxpooling Pretrain','numEpochs  ','Patience  ','lr  ','Batch size  ','schedule  ','model name  ','Optimizer  ','loss   ','maxpooling  ','Repetitions','train encoder','bottleneck freezing','Super Resolution train','Super Resolution val','Super Resolution test','Seg train','Seg val','Seg test','Style transfer train','Style transfer val','Style transfer test'])
-#experiment={'Fecha':date.today(),'Experimento':testName,'numEpochs Pretrain':numEp

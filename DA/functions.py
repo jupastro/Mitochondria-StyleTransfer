@@ -713,7 +713,7 @@ Created on Wed Apr  7 16:06:33 2021
 """
 
 
-#from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 #from SelfSupervisedLearning.metrics_loss_functions import jaccard_index,jaccard_index_final, dice_coeff, dice_loss ,bce_dice_loss,weighted_bce_dice_loss,loss_seg
 #from SelfSupervisedLearning.oneCycle import OneCycleScheduler
 #from SelfSupervisedLearning.NetworkDefinitions import UNet,ResUNet,MobileNetEncoder
