@@ -21,6 +21,18 @@ try:
 except:
  print('Already created folder')
 
+try:
+  os.mkdir('Modelo')
+except:
+ print('Already created folder')
+try:
+  os.mkdir('Modelo/Iteraciones1')
+except:
+ print('Already created folder')
+try:
+  os.mkdir('Modelo/Iteraciones2')
+except:
+ print('Already created folder')
 
 nameSavingFile=str((testName+'.xlsx'))
 
@@ -312,13 +324,6 @@ from tensorflow.keras.layers import Dropout, BatchNormalization, SpatialDropout2
 from tensorflow.keras.layers import Conv2D, Conv2DTranspose, SeparableConv2D, Conv1D
 from tensorflow.keras.layers import AveragePooling2D, MaxPooling2D
 from tensorflow.keras.layers import Concatenate, Add, concatenate, Lambda
-#from SelfSupervisedLearning.NetworkDefinitions import MobileNetEncoder,UNet,ResUNet
-
-"""Implementation of Mish activation function (from https://github.com/digantamisra98/Mish/blob/master/Mish/TFKeras/mish.py):
-
-## Data augmentation
-Now, we define a method to perform data augmentation over the training set.
-"""
 
 #@title
 
@@ -604,7 +609,7 @@ total_prec100=[]
 for i in range(0,repetitions):
     history,model1=train(X_train,Y_train,X_val,Y_val,numEpochs,1,patience,lr,lr*1e-1,batch_size_value,schedule,model_name,optimizer_name,loss_acronym,max_pooling,train_encoder=train_encoder,preTrain=False,Denoising=False,pre_load_weights=True,pretrained_model=model,plot_history=plot_history,bottleneck_freezing=bottleneck_freezing)
     # Evaluate the model on the test data using `evaluate`
-    model1.save((testName+'/lucchi_FineTunedModel'+str(i)+'.h5'))
+    model1.save((testName+'/Iteraciones1/lucchi_FineTunedModel'+str(i)+'.h5'))
     print('\n# Evaluate on test data with all training data in loop:',i)
     
 
@@ -623,24 +628,27 @@ Y_test = np.expand_dims( Y_test, axis=-1 )
 
 model1.evaluate(x=X_test,y=Y_test)
 
-IoU_Lucchi2Kashturi=[]
-total_seg100=[]
-for i in range(0,len(X_test)):
-  #print('Evaluating test image',i)
-  normalizedImg = X_test[i][:,:,:]
-  prediction = model1.predict(normalizedImg[np.newaxis,:,:]);
-  image=prediction[0,:,:,:];
-  
-  IoU_Lucchi2Kashturi.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
+IoU_Lucchi2Lucchi_temp=[]
+IoU_Lucchi2Lucchi=[]
+model_input_filenames1 = [x for x in os.listdir(testName+'/Iteraciones1' ) if x.endswith(".h5")]
+for w in  model_input_filenames1 :
+  model1 = keras.models.load_model(testName+'/Iteraciones1/'+w)
+  for i in range(0,len(X_test)):
+    print('Evaluating test image',i)
+    normalizedImg = X_test[i][:,:,:];
+    prediction = model1.predict(normalizedImg[np.newaxis,:,:]);
+    image=prediction[0,:,:,:];
+    
+    IoU_Lucchi2Lucchi_temp.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
 
-total_seg100.append(np.mean(np.nan_to_num(IoU_Lucchi2Kashturi)))
+  IoU_Lucchi2Lucchi.append(np.mean(np.nan_to_num(IoU_Lucchi2Lucchi_temp)))
 
-print('The average IoU in test set is: ',total_seg100)
+print('The average IoU in test set is: ',IoU_Lucchi2Lucchi)
 try:
     file1 = open(testName+'.txt',"a")
-    file1.write('Lucchi-Lucchi IoU:'+ str(np.mean(total_seg100))+'\n')
+    file1.write('Lucchi-Lucchi IoU:'+ str(np.mean(IoU_Lucchi2Lucchi))+'\n')
+    file1.write('Lucchi-Lucchi std:'+ str(np.std(IoU_Lucchi2Lucchi))+'\n')
 
-    
 except:
     print('No se ha podido copiar en el txt el IoU')
 #@title
@@ -671,24 +679,27 @@ X_test = [  np.expand_dims( append_pot2(x), axis=-1 )  for x in test_img2 ];
 Y_test = [  append_pot2(x)  for x in test_lbl2 ];
 test_lbl=[  append_pot2(x)  for x in test_lbl2 ];
 
-total_seg2=[]
-total_seg=[]
-for i in range(0,len(X_test)):
+IoU_Lucchi2Kashturi_temp=[]
+IoU_Lucchi2Kashturi=[]
+for w in  model_input_filenames1 :
+  model1 = keras.models.load_model(testName+'/Iteraciones1/'+w)
+  for i in range(0,len(X_test)):
 
-  #print('Evaluating test image',i)
-  normalizedImg = X_test[i][:,:,:]
-  prediction = model1.predict(normalizedImg[np.newaxis,:,:]);
-  image=prediction[0,:,:,:];
-  
-  total_seg.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
+    #print('Evaluating test image',i)
+    normalizedImg = X_test[i][:,:,:]
+    prediction = model1.predict(normalizedImg[np.newaxis,:,:]);
+    image=prediction[0,:,:,:];
+    
+    IoU_Lucchi2Kashturi_temp.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
 
-total_seg2.append(np.nanmean(total_seg))
+  IoU_Lucchi2Kashturi.append(np.nanmean(IoU_Lucchi2Kashturi_temp))
 
-print('The average IoU in test set is: ',np.mean(total_seg2))
+print('The average IoU in test set is: ',np.mean(IoU_Lucchi2Kashturi))
 try:
     file1 = open(testName + '.txt',"a")
     file1.write('Lucchi-Kashturi IoU:')
-    file1.write(str(np.mean(total_seg2))+'\n')
+    file1.write(str(np.mean(IoU_Lucchi2Kashturi))+'\n')
+    file1.write(str(np.std(IoU_Lucchi2Kashturi))+'\n')
 
    
 except:
@@ -776,30 +787,36 @@ total_prec100=[]
 for i in range(0,repetitions):
     history,model2=train(X_train,Y_train,X_val,Y_val,numEpochs,1,patience,lr,lr*1e-1,batch_size_value,schedule,model_name,optimizer_name,loss_acronym,max_pooling,train_encoder=train_encoder,preTrain=False,Denoising=False,pre_load_weights=True,pretrained_model=model,plot_history=plot_history,bottleneck_freezing=bottleneck_freezing)
     # Evaluate the model on the test data using `evaluate`
-    model2.save((testName+'/kashturi_FineTunedModel'+str(i)+'.h5'))
+    model2.save((testName+'/Iteraciones2/kashturi_FineTunedModel'+str(i)+'.h5'))
     print('\n# Evaluate on test data with all training data in loop:',i)
 
 X_test = [  np.expand_dims( append_pot2(x), axis=-1 )  for x in test_img2 ];
 Y_test = [  append_pot2(x)  for x in test_lbl2 ];
 test_lbl=[  append_pot2(x)  for x in test_lbl2 ];
 
-total_seg=[]
-total_seg100=[]
-for i in range(0,len(X_test)):
-  #print('Evaluating test image',i)
-  normalizedImg = X_test[i][:,:,:]
-  prediction = model2.predict(normalizedImg[np.newaxis,:,:]);
-  image=prediction[0,:,:,:];
-  
-  total_seg.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
+IoU_Kashturi2Kashturi_temp=[]
+IoU_Kashturi2Kashturi=[]
+model_input_filenames2 = [x for x in os.listdir(testName+'/Iteraciones2' ) if x.endswith(".h5")]
+for w in  model_input_filenames2 :
+  model2 = keras.models.load_model(testName+'/Iteraciones2/'+w)
+  for i in range(0,len(X_test)):
+    #print('Evaluating test image',i)
+    normalizedImg = X_test[i][:,:,:]
+    prediction = model2.predict(normalizedImg[np.newaxis,:,:]);
+    image=prediction[0,:,:,:];
+    
+    IoU_Kashturi2Kashturi_temp.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
 
-total_seg100.append(np.nanmean(np.nan_to_num(total_seg)))
+  IoU_Kashturi2Kashturi.append(np.nanmean(np.nan_to_num(IoU_Kashturi2Kashturi_temp)))
 
-print('The average SEG in test set is: ',total_seg100)
+print('The average SEG in test set is: ',IoU_Kashturi2Kashturi)
 try:
     file1 = open(testName + '.txt',"a")
     file1.write('Kashturi-Kashturi IoU:')
-    file1.write(str(np.mean(total_seg100))+'\n')
+    file1.write(str(np.mean(IoU_Kashturi2Kashturi))+'\n')
+    file1.write('Kashturi-Kashturi std:')
+    file1.write(str(np.std(IoU_Kashturi2Kashturi))+'\n')
+    
 
    
 except:
@@ -832,23 +849,27 @@ X_test = [  np.expand_dims( append_pot2(x), axis=-1 )  for x in test_img1 ];
 Y_test = [  append_pot2(x)  for x in test_lbl1 ];
 test_lbl=[  append_pot2(x)  for x in test_lbl1 ];
 
-total_seg2=[]
-total_seg=[]
-for i in range(0,len(X_test)):
+IoU_Kashturi2Lucchi_temp=[]
+IoU_Kashturi2Lucchi=[]
+for w in  model_input_filenames2 :
+  model2 = keras.models.load_model(testName+'/Iteraciones2/'+w)
+  for i in range(0,len(X_test)):
 
-  #print('Evaluating test image',i)
-  normalizedImg = X_test[i][:,:,:]
-  prediction = model2.predict(normalizedImg[np.newaxis,:,:]);
-  image=prediction[0,:,:,:];
-  
-  total_seg.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
+    #print('Evaluating test image',i)
+    normalizedImg = X_test[i][:,:,:]
+    prediction = model2.predict(normalizedImg[np.newaxis,:,:]);
+    image=prediction[0,:,:,:];
+    
+    IoU_Kashturi2Lucchi_temp.append(jaccard_index_final(test_lbl[i],image[:,:,0]));
 
-total_seg2.append(np.nanmean(total_seg))
-print('The average SEG in test set is: ',np.mean(total_seg2))
+  IoU_Kashturi2Lucchi.append(np.nanmean(IoU_Kashturi2Lucchi_temp))
+print('The average SEG in test set is: ',np.mean(IoU_Kashturi2Lucchi))
 try:
     file1 = open(testName + '.txt',"a")
     file1.write('Kashturi-Lucchi++ IoU:')
-    file1.write(str(np.mean(total_seg2))+'\n')
+    file1.write(str(np.mean(IoU_Kashturi2Lucchi))+'\n')
+    file1.write('Kashturi-Lucchi++ std:')
+    file1.write(str(np.std(IoU_Kashturi2Lucchi))+'\n')
 
     
 except:
