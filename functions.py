@@ -894,6 +894,7 @@ def train(X_train,Y_train,X_val,Y_val,numEpochs,output_channels,patience,lr,min_
                                                           batch_size=batch_size_value,
                                                           show_examples=False )
   #Here we establish the architecture based in the input model_name
+  
   num_filters=16
   dropout_value=0.2
   if model_name == 'UNet':
@@ -983,12 +984,15 @@ def train(X_train,Y_train,X_val,Y_val,numEpochs,output_channels,patience,lr,min_
   if check_ev:
       callbacks = [earlystopper,save_periodically] if lr_schedule is None else [earlystopper, lr_schedule,save_periodically]
   # train!
+  validation_steps=np.ceil(len(X_val[:,0,0,0])/batch_size_value)
+  steps_per_epoch=np.ceil(len(X_train[:,0,0,0])/batch_size_value)
+  del X_train,Y_train,X_val,Y_val
   history = model.fit(train_generator, validation_data=val_generator,
-                      validation_steps=np.ceil(len(X_val[:,0,0,0])/batch_size_value),
-                      steps_per_epoch=np.ceil(len(X_train[:,0,0,0])/batch_size_value),
+                      validation_steps=validation_steps,
+                      steps_per_epoch=steps_per_epoch,
                       epochs=numEpochs, callbacks=callbacks,verbose=2)
   if check_ev==False:                   
-    print('Restoring model with best weights')
+    print('Restoring model...')
     model.load_weights(filepath=(path_save+'/best_model'))
     print('Done!')
   import matplotlib.pyplot as plt
