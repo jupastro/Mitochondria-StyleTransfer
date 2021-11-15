@@ -875,6 +875,7 @@ def train(X_train,Y_train,X_val,Y_val,numEpochs,output_channels,patience,lr,min_
       model: keras model trained for a particular task
   """
   bottleneck_train=True
+  tf.keras.backend.clear_session()
   if bottleneck_freezing:
     bottleneck_train=False
   #Here we create the training and validation generators 
@@ -1803,7 +1804,7 @@ def evaluate_test(X_test,test_lbl,model,save_img=False,path=None):
       filtered_img=image[:,:,0]*filtered_img[:,:,0]
       if save_img:
           
-        cv2.imwrite(f'{path}/prediction_{str(i)}.png', filtered_img>0.5)
+        cv2.imwrite(f'{path}/prediction_{str(i)}.png', np.float32(filtered_img>0.5))
     
       IoU_Dataset12Dataset1_temp.append(jaccard_index_final(test_lbl[i],filtered_img));
     return np.mean(np.nan_to_num(IoU_Dataset12Dataset1_temp))
