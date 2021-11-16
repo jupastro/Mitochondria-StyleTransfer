@@ -1114,6 +1114,7 @@ def filter_patches(patch,gt_patch,percent):
             preserved_patches.append(patch[i])
             preserved_GT.append(gt_patch[i])
     print('Se han eliminado:'+str(len(patch)-len(preserved_patches))+' patches no informativos.')
+    print('Se han conservado:'+str(len(preserved_patches)))
     return preserved_patches, preserved_GT
 
 
