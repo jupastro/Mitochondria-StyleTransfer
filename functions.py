@@ -1033,7 +1033,7 @@ from skimage.util import img_as_ubyte
 from skimage import io,color
 import matplotlib.pyplot as plt
 
-def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_patches=False):
+def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_patches=False,factor=2):
     ''' Create a list of  patches out of a list of images
     Args:
         imgs: list of input images
@@ -1059,7 +1059,7 @@ def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_pa
             original_size = imgs[n].shape
             num_y_patches = original_size[ 0 ] // patch_size[0]#obtain the int number of patches that can be actually extracted from the original image
             num_x_patches = original_size[ 1 ] // patch_size[1]
-            n=num_y_patches*num_x_patches*2
+            n=num_y_patches*num_x_patches*factor
 
             for w in range(0,int(n)):
                 i=random.choice(range( 0, num_y_patches ))
@@ -1812,4 +1812,61 @@ def evaluate_test(X_test,test_lbl,model,save_img=False,path=None):
     
       IoU_Dataset12Dataset1_temp.append(jaccard_index_final(test_lbl[i],filtered_img));
     return np.mean(np.nan_to_num(IoU_Dataset12Dataset1_temp))
+
+
+import smtplib
+from pathlib import Path
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email.utils import COMMASPACE, formatdate
+from email import encoders
+
+
+def send_mail(send_from, send_to, subject, message, files=[],
+              server="localhost", port=587, username='', password='',
+              use_tls=True):
+    """Compose and send email with provided info and attachments.
+
+    Args:
+        send_from (str): from name
+        send_to (list[str]): to name(s)
+        subject (str): message title
+        message (str): message body
+        files (list[str]): list of file paths to be attached to email
+        server (str): mail server host name
+        port (int): port number
+        username (str): server auth username
+        password (str): server auth password
+        use_tls (bool): use TLS mode
+    """
+    try:
+        
+
+        msg = MIMEMultipart()
+        msg['From'] = send_from
+        msg['To'] = COMMASPACE.join(send_to)
+        msg['Date'] = formatdate(localtime=True)
+        msg['Subject'] = subject
+
+        msg.attach(MIMEText(message))
+
+        for path in files:
+            part = MIMEBase('application', "octet-stream")
+            with open(path, 'rb') as file:
+                part.set_payload(file.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition',
+                            'attachment; filename={}'.format(Path(path).name))
+            msg.attach(part)
+
+        smtp = smtplib.SMTP(server, port)
+        if use_tls:
+            smtp.starttls()
+        smtp.login(username, password)
+        smtp.sendmail(send_from, send_to, msg.as_string())
+        smtp.quit()
+        print ("Email sent successfully!")
+    except Exception as ex:
+        print ("Something went wrong….",ex)
  
