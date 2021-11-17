@@ -1870,7 +1870,8 @@ def send_mail(send_from, send_to, subject, message, files=[],
         print ("Email sent successfully!")
     except Exception as ex:
         print ("Something went wrong….",ex)
- def reduce_number_imgs_num(imgs,label_imgs,num_patches=1,normalize=True,imagenet=False):
+ 
+def reduce_number_imgs_num(imgs,label_imgs,num_patches=1,normalize=True,imagenet=False):
     """
     Input:
     imgs:a list or tensor containing several images to be packed as a list after reducing its number
