@@ -1219,10 +1219,10 @@ def crappify(img,resizing_factor,add_noise=True,noise_level=None,Down_up=True):
   to obtain an image of the same size as the original but with the corresponding loss of quality of downsizing and upsizing
   """
   w,h=img.shape
-  org_sz=(w,h)
+  org_sz=(h,w)
   new_w=int(w/np.sqrt(resizing_factor))
   new_h=int(h/np.sqrt(resizing_factor))
-  targ_sz=(new_w,new_h)
+  targ_sz=(new_h,new_w)
   #add Gaussian noise
   if add_noise:
     noisy=add_Gaussian_Noise(img,noise_level,print_img=False)
