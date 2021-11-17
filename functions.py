@@ -1872,16 +1872,6 @@ def send_mail(send_from, send_to, subject, message, files=[],
         print ("Something went wrong….",ex)
  
 def reduce_number_imgs_num(imgs,label_imgs,num_patches=1,normalize=True,imagenet=False):
-    """
-    Input:
-    imgs:a list or tensor containing several images to be packed as a list after reducing its number
-    label_imgs: a list or tensor containing several label images in the same order as the imgs tensor
-    percentage_data: float(0-1) indicating the reduction in labels to be performed i.e 1 means that all the image will be taken into account
-    normalize: Boolean indicating whether or not to perform a normalization step in the img, no normalization is performed in the labels as it is supposed that they would already been in a binary 
-    Output:
-    x: list containing a subset of imgs
-    y:list containing a subset of labels
-    """
     n=len(imgs)
     if imagenet:
       if normalize:
