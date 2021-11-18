@@ -1033,7 +1033,7 @@ from skimage.util import img_as_ubyte
 from skimage import io,color
 import matplotlib.pyplot as plt
 
-def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_patches=False,factor=1,filter=True,threshold=0.05,verbose=True):
+def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_patches=False,factor=1,filter=True,threshold=0.05,verbose=False):
     ''' Create a list of  patches out of a list of images
     Args:
         imgs: list of input images
@@ -1062,8 +1062,7 @@ def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_pa
             num=num_y_patches*num_x_patches*factor
             w=0
             while w<int(num):
-                if verbose:print(num)
-                if verbose:print(w)
+                
                 i=random.choice(range( 0, num_y_patches ))
                 j=random.choice(range( 0, num_x_patches ))
                 patch_lbl=lbl[ i * patch_width : (i+1) * patch_width,
@@ -1075,7 +1074,9 @@ def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_pa
                                             j * patch_height : (j+1) * patch_height ])
                         lbl_patches.append(lbl[ i * patch_width : (i+1) * patch_width,
                                             j * patch_height : (j+1) * patch_height ])
-                        w+=w 
+                        w+=1
+                        if verbose:print(num)
+                        if verbose:print(w)
                     else:
                       if verbose:print('Non-significative patch')
                       if verbose:print(np.mean(np.mean(patch_lbl)))
