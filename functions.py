@@ -1033,7 +1033,7 @@ from skimage.util import img_as_ubyte
 from skimage import io,color
 import matplotlib.pyplot as plt
 
-def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_patches=False,factor=2):
+def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_patches=False,factor=1,filter=True,threshold=0.05):
     ''' Create a list of  patches out of a list of images
     Args:
         imgs: list of input images
@@ -1060,14 +1060,26 @@ def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_pa
             num_y_patches = original_size[ 0 ] // patch_size[0]#obtain the int number of patches that can be actually extracted from the original image
             num_x_patches = original_size[ 1 ] // patch_size[1]
             n=num_y_patches*num_x_patches*factor
-
-            for w in range(0,int(n)):
+            w=0
+            while w<int(n):
                 i=random.choice(range( 0, num_y_patches ))
                 j=random.choice(range( 0, num_x_patches ))
-                patches.append(img[ i * patch_width : (i+1) * patch_width,
-                                        j * patch_height : (j+1) * patch_height ])
-                lbl_patches.append(lbl[ i * patch_width : (i+1) * patch_width,
-                                        j * patch_height : (j+1) * patch_height ])
+                patch_lbl=lbl[ i * patch_width : (i+1) * patch_width,
+                                            j * patch_height : (j+1) * patch_height ]
+                if filter:
+                    if mean(patch_lbl)>threshold:
+                    
+                        patches.append(img[ i * patch_width : (i+1) * patch_width,
+                                            j * patch_height : (j+1) * patch_height ])
+                        lbl_patches.append(lbl[ i * patch_width : (i+1) * patch_width,
+                                            j * patch_height : (j+1) * patch_height ])
+                        w+=w 
+                else:
+                    patches.append(img[ i * patch_width : (i+1) * patch_width,
+                                            j * patch_height : (j+1) * patch_height ])
+                    lbl_patches.append(lbl[ i * patch_width : (i+1) * patch_width,
+                                            j * patch_height : (j+1) * patch_height ])
+                    
 
     else:
         print('Sequentially cropping patches from the original image')
