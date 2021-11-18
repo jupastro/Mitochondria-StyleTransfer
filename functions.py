@@ -1067,7 +1067,7 @@ def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_pa
                 patch_lbl=lbl[ i * patch_width : (i+1) * patch_width,
                                             j * patch_height : (j+1) * patch_height ]
                 if filter:
-                    if mean(patch_lbl)>threshold:
+                    if np.mean(np.mean(gt_patch[i]))>=threshold
                     
                         patches.append(img[ i * patch_width : (i+1) * patch_width,
                                             j * patch_height : (j+1) * patch_height ])
