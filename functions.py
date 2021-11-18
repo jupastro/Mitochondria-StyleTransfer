@@ -1078,6 +1078,7 @@ def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_pa
                         w+=w 
                     else:
                       if verbose:print('Non-significative patch')
+                      if verbose:print(np.mean(np.mean(patch_lbl)))
                 else:
                     patches.append(img[ i * patch_width : (i+1) * patch_width,
                                             j * patch_height : (j+1) * patch_height ])
