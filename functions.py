@@ -738,14 +738,16 @@ def morphology_analysis(data):
     p_solidity = []
     p_eccentricity = []
     p_orientation = []
-    small_objs = 4000 # Definir valor en función del GT de train. El remove se hace en 3D. De Lucchi++ a Kasthuri++ este valor lo he puesto en 4000
+    n_objects=[]
+    #small_objs = 0 # Definir valor en función del GT de train. El remove se hace en 3D. De Lucchi++ a Kasthuri++ este valor lo he puesto en 4000
 
     label_img = label(data)   # Connected components 
-    label_img = morphology.remove_small_objects(label_img, small_objs)  # Filtrar objetos pequeños                                                
+    #label_img = morphology.remove_small_objects(label_img, small_objs)  # Filtrar objetos pequeños                                                
                                                                                                      
     for i in range(label_img.shape[0]):     # Por cada imagen 2D                                                                               
         
-        img = clear_border(label_img[i])   # Quitar objs de los bordes 
+        img = label_img[i]  # Quitar objs de los bordes 
+        
         
                                                                                                             
         props = regionprops_table(img, properties=('area', 'solidity', 'eccentricity', 'orientation'))    # Sacar las propiedades                                        
@@ -753,19 +755,26 @@ def morphology_analysis(data):
         for v in props['area']: p_area.append(v)                                                                           
         for v in props['solidity']: p_solidity.append(v)                                                                   
         for v in props['eccentricity']: p_eccentricity.append(v)                                                           
-        for v in props['orientation']: p_orientation.append(v)                                                             
+        for v in props['orientation']: p_orientation.append(v)  
+        n_objects.append(len(np.unique(img))-1) 
+                                                           
     try:                                                                                                                   
         gt_area_value = statistics.mean(p_area)                                                                                
         gt_solidity_value = statistics.mean(p_solidity)                                                                        
         gt_eccentricity_value = statistics.mean(p_eccentricity)                                                                
         gt_orientation_value = statistics.mean(p_orientation) 
+        gt_area_value_median=statistics.median(p_area)
+        gt_object_number=statistics.mean(n_objects)
+        
     except:
         gt_area_value = 0                                                                               
         gt_solidity_value = 0                                                                      
         gt_eccentricity_value = 0                                                              
         gt_orientation_value = 0
+        gt_area_value_median=0
+        gt_object_number=0
 
-    return gt_area_value,gt_solidity_value,gt_eccentricity_value,gt_orientation_value                          
+    return gt_area_value,gt_solidity_value,gt_eccentricity_value,gt_orientation_value,gt_area_value_median,gt_object_number                         
                           
 import pandas as pd
 class CustomSaver(keras.callbacks.Callback):
@@ -788,11 +797,13 @@ class CustomSaver(keras.callbacks.Callback):
         self.solidity=[]
         self.eccentricity=[]
         self.orientation=[]
+        self.median_area=[]
+        self.n_objects=[]
 
         
 
     def on_epoch_end(self, epoch, logs={}):
-        if (epoch%2)==0:  # or save after some epoch, each k-th epoch etc.
+        if (epoch%4)==0:  # or save after some epoch, each k-th epoch etc.
             IoU_Dataset12Dataset1_temp=[]
             for i in range(0,len(self.Xtest)):
                 #print('Evaluating test image',i)
@@ -811,16 +822,19 @@ class CustomSaver(keras.callbacks.Callback):
             predictions = self.model.predict(self.Xtest,batch_size=1)
             print(predictions.shape)
             
-            gt_area_value,gt_solidity_value,gt_eccentricity_value,gt_orientation_value=morphology_analysis(predictions[:,:,:,0]>=0.5)
+            gt_area_value,gt_solidity_value,gt_eccentricity_value,gt_orientation_value,gt_area_value_median,gt_object_number =morphology_analysis(predictions[:,:,:,0]>=0.5)
         
             self.area.append(gt_area_value)
             self.solidity.append(gt_solidity_value)
             self.eccentricity.append(gt_eccentricity_value)
             self.orientation.append(gt_orientation_value)
+            self.median_area.append(gt_area_value_median)
+            self.n_objects.append(gt_object_number)
+
             
             
-            self.model.save(f'{self.path_save}model_E{epoch}_loss{loss:.3f}_jaccard_{jaccard:.3f}.h5')
-            print(f'{self.path_save}/model_E{epoch}_loss{loss:.3f}_jaccard_{jaccard:.3f}')
+            self.model.save(f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5')
+            print(f'{self.path_save}/model_E{epoch}_jaccard_{jaccard:.3f}')
 
     def on_train_end(self,logs={}):
         plt.figure()
@@ -837,13 +851,11 @@ class CustomSaver(keras.callbacks.Callback):
         morphology['solidity']=self.solidity
         morphology['eccentricity']=self.eccentricity
         morphology['orientation']=self.orientation
+        morphology['Median area']=self.median_area
+        morphology['Object Number']=self.n_objects
         
         morphology.to_csv('per_epoch_evolution{}.txt'.format(datetime.datetime.now().time()))
 
-        #with open('IoU_per_epoch_evolution{}.txt'.format(datetime.datetime.now().time()), "a+") as file:
-         #  for element in self.IoU_test:
-          #      file. write(str(element) + "\n")
-           #file.close()
 
 
 
@@ -1827,7 +1839,7 @@ def evaluate_test(X_test,test_lbl,model,save_img=False,path=None):
       filtered_img=image[:,:,0]*filtered_img[:,:,0]
       if save_img:
           
-        cv2.imwrite(f'{path}/prediction_{str(i)}.png', np.float32(filtered_img>0.5))
+        cv2.imwrite(f'{path}/prediction_{str(i)}.png', np.int8(filtered_img>0.5))
     
       IoU_Dataset12Dataset1_temp.append(jaccard_index_final(test_lbl[i],filtered_img));
     return np.mean(np.nan_to_num(IoU_Dataset12Dataset1_temp))
