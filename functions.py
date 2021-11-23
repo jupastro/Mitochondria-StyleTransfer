@@ -1097,6 +1097,7 @@ def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_pa
                                             j * patch_height : (j+1) * patch_height ])
                     lbl_patches.append(lbl[ i * patch_width : (i+1) * patch_width,
                                             j * patch_height : (j+1) * patch_height ])
+                    w+=1
                     
 
     else:
