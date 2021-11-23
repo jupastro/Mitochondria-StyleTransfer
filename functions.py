@@ -1838,8 +1838,12 @@ def evaluate_test(X_test,test_lbl,model,save_img=False,path=None):
       filtered_img=((normalizedImg[:,:]!=0))
       filtered_img=image[:,:,0]*filtered_img[:,:,0]
       if save_img:
-          
-        cv2.imwrite(f'{path}/prediction_{str(i)}.png', np.int8(filtered_img>0.5))
+        try:
+            plt.figure()
+            plt.imshow(np.int8(filtered_img[:,:,0]>0.5),'gray') 
+            plt.savefig(f'{path}/prediction_{str(i)}.png')
+        except:
+            print('Problems when saving test predictions')
     
       IoU_Dataset12Dataset1_temp.append(jaccard_index_final(test_lbl[i],filtered_img));
     return np.mean(np.nan_to_num(IoU_Dataset12Dataset1_temp))
