@@ -7,18 +7,30 @@ Created on Wed Mar 31 13:58:29 2021
 @author: juliopastor
 """
 
-
+import numpy as np
+from skimage.segmentation import find_boundaries
+import numpy as np
+from numba import jit
+from scipy import ndimage
+from tqdm import tqdm, tqdm_notebook
+import numpy as np
+from numba import jit,njit
+from scipy import ndimage
+from tqdm import tqdm, tqdm_notebook
 import cv2
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from skimage import transform,metrics
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 # Random rotation of an image by a multiple of 90 degrees
+#@jit
 def random_90rotation( img ):
     return transform.rotate(img, 90*np.random.randint( 0, 5 ), preserve_range=True)
 
 # Runtime data augmentation
+#@jit
 def get_train_val_generators(X_train, Y_train, X_val,Y_val,
                              batch_size=32, seed=42, rotation_range=0,
                              horizontal_flip=True, vertical_flip=True,
@@ -91,17 +103,8 @@ def get_train_val_generators(X_train, Y_train, X_val,Y_val,
     print("data augmentation: Done!")
     return train_generator, test_generator
 
-import numpy as np
-from skimage.segmentation import find_boundaries
-import numpy as np
-from numba import jit
-from scipy import ndimage
-from tqdm import tqdm, tqdm_notebook
-import numpy as np
-from numba import jit,njit
-from scipy import ndimage
-from tqdm import tqdm, tqdm_notebook
 
+#@jit
 def convert_to_oneHot(data, eps=1e-8):
     """
     Converts labelled images (`data`) to one-hot encoding.
@@ -122,7 +125,7 @@ def convert_to_oneHot(data, eps=1e-8):
 
     return data_oneHot
 
-
+#@jit
 def add_boundary_label(lbl, dtype=np.uint16):
     """
     Find boundary labels for a labelled image.
@@ -141,7 +144,7 @@ def add_boundary_label(lbl, dtype=np.uint16):
     res[b] = 2
     return res
 
-
+#@jit
 def onehot_encoding(lbl, n_classes=3, dtype=np.uint32):
     """ n_classes will be determined by max lbl value if its value is None """
     onehot = np.zeros((*lbl.shape, n_classes), dtype=dtype)
@@ -149,7 +152,7 @@ def onehot_encoding(lbl, n_classes=3, dtype=np.uint32):
         onehot[lbl == i, ..., i] = 1
     return onehot
 
-
+#@jit
 def normalize(img, mean, std):
     """
     Mean-Std Normalization.
@@ -168,7 +171,7 @@ def normalize(img, mean, std):
     """
     return (img - mean) / std
 
-
+#@jit
 def denormalize(img, mean, std):
     """
     Mean-Std De-Normalization.
@@ -187,7 +190,7 @@ def denormalize(img, mean, std):
     """
     return (img * std) + mean
 
-
+#@jit
 def zero_out_train_data(X_train, Y_train, fraction):
     """
     Fractionates training data according to the specified `fraction`.
@@ -211,7 +214,7 @@ def zero_out_train_data(X_train, Y_train, fraction):
 
     return X_train, Y_train
 
-@jit
+#@jit
 def pixel_sharing_bipartite(lab1, lab2):
     assert lab1.shape == lab2.shape
     psg = np.zeros((lab1.max() + 1, lab2.max() + 1), dtype=np.int)
@@ -219,7 +222,7 @@ def pixel_sharing_bipartite(lab1, lab2):
         psg[lab1.flat[i], lab2.flat[i]] += 1
     return psg
 
-@jit
+#@jit
 def intersection_over_union(psg):
     """
     Computes IOU.
@@ -230,7 +233,7 @@ def intersection_over_union(psg):
     csum = np.sum(psg, 1, keepdims=True)
     return psg / (rsum + csum - psg)
 
-@jit
+#@jit
 def matching_iou(psg, fraction=0.5):
     """
     Computes IOU.
@@ -242,7 +245,7 @@ def matching_iou(psg, fraction=0.5):
     matching[:, 0] = False
     matching[0, :] = False
     return matching
-@jit
+#@jit
 def measure_precision(iou=0.5, partial_dataset=False):
     def precision(lab_gt, lab, iou=iou, partial_dataset=partial_dataset):
         """
@@ -264,7 +267,7 @@ def measure_precision(iou=0.5, partial_dataset=False):
 
     return precision
 
-@jit
+#@jit
 def matching_overlap(psg, fractions=(0.5,0.5)):
     """
     create a matching given pixel_sharing_bipartite of two label images based on mutually overlapping regions of sufficient size.
@@ -283,7 +286,7 @@ def matching_overlap(psg, fractions=(0.5,0.5)):
     matching = matching.astype('bool')
     return matching
 
-@jit
+#@jit
 def measure_seg(partial_dataset=False):
     def seg(lab_gt, lab, partial_dataset=partial_dataset):
         """
@@ -309,7 +312,7 @@ def measure_seg(partial_dataset=False):
 
     return seg
 
-
+#@jit
 def isnotebook():
     """
     Checks if code is run in a notebook, which can be useful to determine what sort of progressbar to use.
@@ -330,13 +333,13 @@ def isnotebook():
     except NameError:
         return False
 
-@jit
+#@jit
 def compute_labels(prediction, threshold):
     prediction_fg = prediction[..., 1]
     pred_thresholded = prediction_fg > threshold
     labels, _ = ndimage.label(pred_thresholded)
     return labels
-@jit
+#@jit
 def seg(lab_gt, lab,eps=1e-4):
         """
         calculate seg from pixel_sharing_bipartite
@@ -360,7 +363,7 @@ def seg(lab_gt, lab,eps=1e-4):
         seg= n_matched / (n_gt+eps)
 
         return seg
-@jit
+#@jit
 def precision(lab_gt, lab, iou=0.5, partial_dataset=False,eps=1e-4):
         """
         precision = TP / (TP + FP + FN) i.e. "intersection over union" for a graph matching
@@ -380,7 +383,7 @@ def precision(lab_gt, lab, iou=0.5, partial_dataset=False,eps=1e-4):
             return n_matched / (n_gt + n_hyp - n_matched+eps)
 
         return precision
-@jit   
+#@jit  
 def threshold_optimization(img,lbl,model,seg_weight=2):
   optimal=[]
   thresholds=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.75,0.8,0.85,0.9,0.95]
@@ -407,7 +410,7 @@ from tensorflow.keras.layers import Conv2D, Conv2DTranspose, SeparableConv2D, Co
 from tensorflow.keras.layers import AveragePooling2D, MaxPooling2D
 from tensorflow.keras.layers import Concatenate, Add, concatenate, Lambda
 from tensorflow_examples.models.pix2pix import pix2pix
-
+#@jit
 def MobileNetEncoder(input_size = (None,None,1),
          train_encoder=False,
          random_encoder_weights=True,
@@ -506,6 +509,7 @@ def MobileNetEncoder(input_size = (None,None,1),
   return model
 
   # Regular U-Net
+#@jit
 def UNet(input_size = (None,None,1),
          filters=16,
          activation='elu',
@@ -615,7 +619,7 @@ def UNet(input_size = (None,None,1),
 
 
 # == Residual U-Net ==
-
+#@jit
 def residual_block(x, dim, filter_size, activation='elu', 
                    kernel_initializer='he_normal', dropout_value=0.2, bn=False,
                    separable_conv=False, firstBlock=False, spatial_dropout=False):
@@ -652,7 +656,7 @@ def residual_block(x, dim, filter_size, activation='elu',
     x = Add()([shortcut, x])
     print( 'residual block, dim: ' + str(dim) + ' , output shape: '+ str(x.shape) )
     return x
-
+#@jit
 def level_block(x, depth, dim, fs, ac, k, d, bn, sc, fb, ap, spatial_dropout):
     do = d[depth] if d is not None else None
     if depth > 0:
@@ -666,7 +670,7 @@ def level_block(x, depth, dim, fs, ac, k, d, bn, sc, fb, ap, spatial_dropout):
         x = residual_block(x, dim, fs, ac, k, do, bn, sc, False, spatial_dropout)
     return x
 
-
+#@jit
 def ResUNet( input_size=(None, None, 1), activation='elu', kernel_initializer='he_normal',
             dropout_value=0.2, batchnorm=False, average_pooling=False, separable=False,
             filters=16, depth=4, spatial_dropout=False, long_shortcut=True,num_outputs=1):
@@ -730,8 +734,8 @@ import statistics
 from skimage import morphology                                                                                         
 from skimage.measure import label, regionprops_table                                                      
 from skimage.segmentation import clear_border 
-
-def morphology_analysis(data):
+#@jit
+def morphology_analysis(data,input):
                                                                             
 
     p_area = []
@@ -739,6 +743,7 @@ def morphology_analysis(data):
     p_eccentricity = []
     p_orientation = []
     n_objects=[]
+    ratio_objects_area=[]
     #small_objs = 0 # Definir valor en función del GT de train. El remove se hace en 3D. De Lucchi++ a Kasthuri++ este valor lo he puesto en 4000
 
     label_img = label(data)   # Connected components 
@@ -746,13 +751,19 @@ def morphology_analysis(data):
                                                                                                      
     for i in range(label_img.shape[0]):     # Por cada imagen 2D                                                                               
         
-        img = label_img[i]  # Quitar objs de los bordes 
+        img = label_img[i] 
+        area=(label_img.shape[1] * label_img.shape[2]-np.sum(np.sum((input[i]==0)))) 
         
         
                                                                                                             
         props = regionprops_table(img, properties=('area', 'solidity', 'eccentricity', 'orientation'))    # Sacar las propiedades                                        
                                                                                                             
-        for v in props['area']: p_area.append(v)                                                                           
+        for v in props['area']: 
+            
+            ratio=v/area
+            if (ratio)>5e-3:
+                p_area.append(v)
+                ratio_objects_area.append(ratio)                                                                           
         for v in props['solidity']: p_solidity.append(v)                                                                   
         for v in props['eccentricity']: p_eccentricity.append(v)                                                           
         for v in props['orientation']: p_orientation.append(v)  
@@ -765,6 +776,7 @@ def morphology_analysis(data):
         gt_orientation_value = statistics.mean(p_orientation) 
         gt_area_value_median=statistics.median(p_area)
         gt_object_number=statistics.mean(n_objects)
+        gt_ratio=statistics.mean(ratio_objects_area)
         
     except:
         gt_area_value = 0                                                                               
@@ -773,13 +785,16 @@ def morphology_analysis(data):
         gt_orientation_value = 0
         gt_area_value_median=0
         gt_object_number=0
+        gt_ratio=0
 
-    return gt_area_value,gt_solidity_value,gt_eccentricity_value,gt_orientation_value,gt_area_value_median,gt_object_number                         
+    return gt_area_value,gt_solidity_value,gt_eccentricity_value,gt_orientation_value,gt_area_value_median,gt_object_number,gt_ratio                         
                           
-import pandas as pd
-class CustomSaver(keras.callbacks.Callback):
 
+class CustomSaver(keras.callbacks.Callback):
+    #@jit
+    
     def __init__(self, X_test,Y_test,path_save='Models'):
+        import pandas as pd
 
         """ Save params in constructor
         """
@@ -799,14 +814,18 @@ class CustomSaver(keras.callbacks.Callback):
         self.orientation=[]
         self.median_area=[]
         self.n_objects=[]
+        self.ratio=[]
+        self.update_count=0
+        self.dif=1000
+        self.past_ratio=1
 
         
-
+    #@jit
     def on_epoch_end(self, epoch, logs={}):
-        if (epoch%4)==0:  # or save after some epoch, each k-th epoch etc.
+        if (epoch%2)==0:  # or save after some epoch, each k-th epoch etc.
             IoU_Dataset12Dataset1_temp=[]
             for i in range(0,len(self.Xtest)):
-                #print('Evaluating test image',i)
+                
                 normalizedImg = self.Xtest[i][:,:,:];
                 prediction = self.model.predict(normalizedImg[np.newaxis,:,:]);
                 image=prediction[0,:,:,0];
@@ -816,13 +835,13 @@ class CustomSaver(keras.callbacks.Callback):
 
             jaccard=np.mean(np.nan_to_num(IoU_Dataset12Dataset1_temp))
             print('Jaccard in target: '+ str(jaccard))
-            loss, IoU =self.model.evaluate(self.Xtest,self.Ytest,batch_size=self.batch_size)
+            
             self.IoU_test.append(jaccard)
             self.x.append(int(epoch))
             predictions = self.model.predict(self.Xtest,batch_size=1)
             print(predictions.shape)
             
-            gt_area_value,gt_solidity_value,gt_eccentricity_value,gt_orientation_value,gt_area_value_median,gt_object_number =morphology_analysis(predictions[:,:,:,0]>=0.5)
+            gt_area_value,gt_solidity_value,gt_eccentricity_value,gt_orientation_value,gt_area_value_median,gt_object_number,gt_ratio=morphology_analysis(predictions[:,:,:,0]>=0.5,self.Xtest)
         
             self.area.append(gt_area_value)
             self.solidity.append(gt_solidity_value)
@@ -830,19 +849,57 @@ class CustomSaver(keras.callbacks.Callback):
             self.orientation.append(gt_orientation_value)
             self.median_area.append(gt_area_value_median)
             self.n_objects.append(gt_object_number)
+            self.ratio.append(gt_ratio)
+            
+            if abs(gt_ratio-8.5e-3)<=self.dif:
+                #Restart count if there's an update
+                self.update_count=0
+                self.dif=abs(gt_ratio-8.5e-3)+0.0001 #add this to avoid getting stuck in a crossing point
+                self.best_model=f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5'
+                self.top_epoch=epoch
+            elif abs(gt_ratio-self.past_ratio)<5e-4 and epoch>20:
+                #Ratio hasn't changed more than 5e-4 for 2 updates(i.e 4 epochs)
+                self.update_count+=1
+                if self.update_count>2:
+                    #Stop the training as it may have converged to a value
+                    print("Training ratio is stable, so stopping training!!")   
+                    self.model.stop_training = True
+            self.past_ratio=gt_ratio
+
 
             
             
             self.model.save(f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5')
             print(f'{self.path_save}/model_E{epoch}_jaccard_{jaccard:.3f}')
-
+    #@jit
     def on_train_end(self,logs={}):
+        self.model.load_weights(self.best_model)
         plt.figure()
-        plt.plot(self.x,self.IoU_test);
+        plt.plot(self.x,self.IoU_test,color='black',marker='.',label='Target IoU');
+        plt.plot(self.top_epoch, self.IoU_test[int(self.x.index(self.top_epoch))], "ro",label='Optimal ratio model')
         plt.title('Target segmentation during Fine-Tuning')
-        plt.xlabel('# Epoch')
+        plt.xlabel('Number of epochs')
         plt.ylabel('IoU')
+        
+        plt.title('Target IoU evolution during Fine-Tuning')
+        plt.axhline(y=np.max(self.IoU_test), color='green', linestyle='dashed',label='Optimal IoU')
+        plt.legend()
+        
         plt.savefig('IoU_per_epoch_evolution{}.png'.format(datetime.datetime.now().time()))
+        plt.close()
+        plt.figure()
+        plt.plot(self.x,self.ratio,color='black',marker='.',label='Target Ratio');
+        plt.title('Target ratio evolution during Fine-Tuning')
+        plt.xlabel('Number of epochs')
+        plt.ylabel('Ratio')
+        plt.yscale('log')
+        
+        plt.axhline(y=8.5e-3, color='green', linestyle='dashed',label='Goal Ratio')
+        plt.plot(self.top_epoch, self.ratio[int(self.x.index(self.top_epoch))], "ro",label='Optimal ratio model')
+        plt.legend()
+        plt.savefig('Ratio_per_epoch_evolution{}.png'.format(datetime.datetime.now().time()))
+        plt.close()
+        
         morphology=pd.DataFrame()
         morphology['Epochs']=self.x
         morphology['IoU']=self.IoU_test
@@ -853,6 +910,7 @@ class CustomSaver(keras.callbacks.Callback):
         morphology['orientation']=self.orientation
         morphology['Median area']=self.median_area
         morphology['Object Number']=self.n_objects
+        morphology['Ratio']=self.ratio
         
         morphology.to_csv('per_epoch_evolution{}.txt'.format(datetime.datetime.now().time()))
 
@@ -862,7 +920,8 @@ class CustomSaver(keras.callbacks.Callback):
 
 import tensorflow as tf
 import numpy as np
-def train(X_train,Y_train,X_val,Y_val,numEpochs,output_channels,patience,lr,min_lr,batch_size_value,schedule,model_name,optimizer_name,loss_acronym,max_pooling,train_encoder=True,random_encoder_weights=True,preTrain=False,Denoising=False,pre_load_weights=False,pretrained_model=None,plot_history=False,seg_weights=[1.,1.,5.],bottleneck_freezing=False,save_best_only=True,check_ev=False,path_save='saved_models',X_test=None,Y_test=None):
+
+def train(X_train,Y_train,X_val,Y_val,numEpochs,output_channels,patience,lr,min_lr,batch_size_value,schedule,model_name,optimizer_name,loss_acronym,max_pooling,train_encoder=True,train_decoder=True,random_encoder_weights=True,preTrain=False,Denoising=False,pre_load_weights=False,pretrained_model=None,plot_history=False,seg_weights=[1.,1.,5.],bottleneck_freezing=False,save_best_only=True,check_ev=False,path_save='saved_models',X_test=None,Y_test=None):
   """Inputs:
         numEpochs(int):number of "loops" of training
         patience(int): number of "loops" without improvement till the training is stopped, in the case of reduce till the lr is reduced to its half
@@ -925,7 +984,7 @@ def train(X_train,Y_train,X_val,Y_val,numEpochs,output_channels,patience,lr,min_
   elif model_name=='AttentionUNET':
     model=Attention_U_Net_2D(image_shape = (None,None,1), activation='elu', feature_maps=[16, 32, 64, 128, 256],
                        drop_values=[0.1,0.1,0.2,0.2,0.3], spatial_dropout=False, batch_norm=False,
-                       k_init='he_normal',num_outputs=1,pre_load_weights=pre_load_weights,pretrained_model=pretrained_model,train_encoder=train_encoder,bottleneck_train=bottleneck_train,skip_connection_train=True,denoising=Denoising)
+                       k_init='he_normal',num_outputs=1,pre_load_weights=pre_load_weights,pretrained_model=pretrained_model,train_encoder=train_encoder,bottleneck_train=bottleneck_train,skip_connection_train=True,denoising=Denoising,train_decoder=train_decoder)
 
   model.summary()
 
@@ -1007,8 +1066,8 @@ def train(X_train,Y_train,X_val,Y_val,numEpochs,output_channels,patience,lr,min_
     print('Restoring model...')
     model.load_weights(filepath=(path_save+'/best_model'))
     print('Done!')
-  import matplotlib.pyplot as plt
-  if plot_history:
+  
+  if True:
     plt.figure(figsize=(14,5))
 
     if callable( eval_metric ):
@@ -1033,7 +1092,7 @@ def train(X_train,Y_train,X_val,Y_val,numEpochs,output_channels,patience,lr,min_
     plt.ylabel(metric_name)
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper left')
-    plt.show()
+    plt.savefig('Train_Val_evolution{}.png'.format(datetime.datetime.now().time()))
 
   return history,model
 import numpy as np
@@ -1044,8 +1103,8 @@ import cv2
 from skimage.util import img_as_ubyte
 from skimage import io,color
 import matplotlib.pyplot as plt
-
-def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_patches=False,factor=1,filter=True,threshold=0.05,verbose=False):
+#@jit
+def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_patches=False,factor=1,filter=False,threshold=0.02,verbose=False):
     ''' Create a list of  patches out of a list of images
     Args:
         imgs: list of input images
@@ -1097,8 +1156,8 @@ def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_pa
                                             j * patch_height : (j+1) * patch_height ])
                     lbl_patches.append(lbl[ i * patch_width : (i+1) * patch_width,
                                             j * patch_height : (j+1) * patch_height ])
-                    w+=1
                     
+                    w+=1
 
     else:
         print('Sequentially cropping patches from the original image')
@@ -1127,7 +1186,7 @@ def create_patches( imgs,lbls,patch_size,add_noise=False,noise_level=0,random_pa
                                             j * patch_height : (j+1) * patch_height ]  )
     
     return patches,lbl_patches
-
+#@jit
 def filter_patches(patch,gt_patch,percent):
     '''
     select_percent: float 0-1 representing the number of positive pixels in a patch to accept it as informative
@@ -1148,7 +1207,7 @@ def filter_patches(patch,gt_patch,percent):
     print('Se han conservado:'+str(len(preserved_patches)))
     return preserved_patches, preserved_GT
 
-
+#@jit
 def set_seed(seedValue=42):
   """Sets the seed on multiple python modules to obtain results as
   reproducible as possible.
@@ -1159,7 +1218,7 @@ def set_seed(seedValue=42):
   np.random.seed(seed=seedValue)
   tf.random.set_seed(seedValue)
   os.environ["PYTHONHASHSEED"]=str(seedValue)
-  
+#@jit 
 def shuffle_fragments( imgs,number_of_patches=(3,3)):
     ''' Shuffles different fragments of the input imgs
     Args:
@@ -1190,7 +1249,7 @@ def shuffle_fragments( imgs,number_of_patches=(3,3)):
                                           j * patch_height : (j+1) * patch_height ]=patches[k]
                 k+=1
     return img
-
+#@jit
 def hide_fragments( imgs,patch_size,percent):
     ''' Sets to 0 different fragments of the input imgs
     Args:
@@ -1216,7 +1275,7 @@ def hide_fragments( imgs,patch_size,percent):
     
     return img
 
-
+#@jit
 def add_Gaussian_Noise(image,percentage_of_noise,print_img=False):
   """
   image:  image to be added Gaussian Noise with 0 mean and a certain std
@@ -1238,7 +1297,7 @@ def add_Gaussian_Noise(image,percentage_of_noise,print_img=False):
     plt.title( 'Noisy image' );
   
   return noisy_img
-
+#@jit
 def crappify(img,resizing_factor,add_noise=True,noise_level=None,Down_up=True):
  
   """
@@ -1270,7 +1329,7 @@ def crappify(img,resizing_factor,add_noise=True,noise_level=None,Down_up=True):
       resized=cv2.resize(resized, org_sz, interpolation = cv2.INTER_LINEAR)
 
   return resized
-
+#@jit
 def reduce_number_imgs(imgs,label_imgs,percentage_data=1,normalize=True,imagenet=False):
     """
     Input:
@@ -1306,7 +1365,7 @@ def reduce_number_imgs(imgs,label_imgs,percentage_data=1,normalize=True,imagenet
     print('Created list with '+str(len(x))+' images')
    
     return x,y
-
+#@jit
 def append_blackborder(img,height,width):
   """ Function to append a blackborder to the images in order to avoid a resizing step that may affect the resolution and pixel size
   """
@@ -1314,6 +1373,7 @@ def append_blackborder(img,height,width):
   new_w=(width- img.shape[1])
   img = cv2.copyMakeBorder(img ,new_h,0,new_w,0 , cv2.BORDER_CONSTANT) 
   return img
+#@jit
 def append_pot2(img):
   """
   Function to append a blackborder but instead of having to specify the shape of the desired image
@@ -1330,7 +1390,7 @@ def append_pot2(img):
   #print('An image with shape'+str(img.shape)+'has been created')
   return img
 import tensorflow as tf
-
+#@jit
 def jaccard_index( y_true, y_pred, skip_first_mask=False ):
     ''' Define Jaccard index for multiple labels.
         Args:
@@ -1371,7 +1431,7 @@ def jaccard_index( y_true, y_pred, skip_first_mask=False ):
                       lambda: tf.cast(0.000, dtype='float64'))
 
     return jac
-
+#@jit
 def jaccard_index_final(y_true, y_pred, t=0.5):
   """Define Jaccard index for final evaluation .
       Args:
@@ -1396,7 +1456,7 @@ def jaccard_index_final(y_true, y_pred, t=0.5):
   return jac
 
 from tensorflow.keras import losses
-
+#@jit
 def dice_coeff(y_true, y_pred):
     """Define Dice coefficient.
        Args:
@@ -1414,17 +1474,20 @@ def dice_coeff(y_true, y_pred):
     return score
 
 # Dice coefficient loss (1 - Dice coefficient)
+#@jit
 def dice_loss(y_true, y_pred):
     loss = 1 - dice_coeff(y_true, y_pred)
     return loss
 
 # Loss function combining binary cross entropy and Dice loss
+#@jit
 def bce_dice_loss(y_true, y_pred):
     loss = losses.binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
     return loss
 
 # Weighted BCE+Dice
 # Inspired by https://medium.com/@Bloomore/how-to-write-a-custom-loss-function-with-additional-arguments-in-keras-5f193929f7a0
+#@jit
 def weighted_bce_dice_loss(w_dice=0.5, w_bce=0.5):
     def loss(y_true, y_pred):
         return losses.binary_crossentropy(y_true, y_pred) * w_bce + dice_loss(y_true, y_pred) * w_dice
@@ -1435,6 +1498,7 @@ def weighted_bce_dice_loss(w_dice=0.5, w_bce=0.5):
 
 import keras.backend as K  
 #Based in denoiseg loss function 
+#@jit
 def loss_seg(relative_weights=[1.0,1.0,5.0]):
     """
     It is based in the DenoiSeg training function used in their paper for segmentation
@@ -1478,13 +1542,13 @@ logging.getLogger('tensorflow').setLevel(logging.ERROR)
 from tensorflow.keras.callbacks import Callback
 
 class CosineAnnealer:
-    
+    #@jit
     def __init__(self, start, end, steps):
         self.start = start
         self.end = end
         self.steps = steps
         self.n = 0
-        
+    #@jit   
     def step(self):
         self.n += 1
         cos = np.cos(np.pi * (self.n / self.steps)) + 1
@@ -1500,7 +1564,7 @@ class OneCycleScheduler(Callback):
     In the second phase the LR decreases from `lr_max` to `lr_max / (div_factor * 1e4)` and momemtum from `mom_max` to `mom_min`.
     By default the phases are not of equal length, with the phase 1 percentage controlled by the parameter `phase_1_pct`.
     """
-
+    #@jit
     def __init__(self, lr_max, steps, mom_min=0.85, mom_max=0.95, phase_1_pct=0.3, div_factor=25.):
         super(OneCycleScheduler, self).__init__()
         lr_min = lr_max / div_factor
@@ -1518,18 +1582,18 @@ class OneCycleScheduler(Callback):
         
         self.lrs = []
         self.moms = []
-
+    #@jit
     def on_train_begin(self, logs=None):
         self.phase = 0
         self.step = 0
 
         self.set_lr(self.lr_schedule().start)
         self.set_momentum(self.mom_schedule().start)
-        
+    #@jit   
     def on_train_batch_begin(self, batch, logs=None):
         self.lrs.append(self.get_lr())
         self.moms.append(self.get_momentum())
-
+    #@jit
     def on_train_batch_end(self, batch, logs=None):
         self.step += 1
         if self.step >= self.phase_1_steps:
@@ -1537,37 +1601,37 @@ class OneCycleScheduler(Callback):
             
         self.set_lr(self.lr_schedule().step())
         self.set_momentum(self.mom_schedule().step())
-        
+    #@jit   
     def get_lr(self):
         try:
             return tf.keras.backend.get_value(self.model.optimizer.lr)
         except AttributeError:
             return None
-        
+    #@jit   
     def get_momentum(self):
         try:
             return tf.keras.backend.get_value(self.model.optimizer.momentum)
         except AttributeError:
             return None
-        
+    #@jit    
     def set_lr(self, lr):
         try:
             tf.keras.backend.set_value(self.model.optimizer.lr, lr)
         except AttributeError:
             pass # ignore
-        
+    #@jit    
     def set_momentum(self, mom):
         try:
             tf.keras.backend.set_value(self.model.optimizer.momentum, mom)
         except AttributeError:
             pass # ignore
-
+    #@jit        
     def lr_schedule(self):
         return self.phases[self.phase][0]
-    
+    #@jit
     def mom_schedule(self):
         return self.phases[self.phase][1]
-    
+    #@jit
     def plot(self):
         ax = plt.subplot(1, 2, 1)
         ax.plot(self.lrs)
@@ -1584,7 +1648,7 @@ from tensorflow.keras.layers import (Dropout, SpatialDropout2D, Conv2D, Conv2DTr
                                      Add, Multiply)
 def Attention_U_Net_2D(image_shape = (None,None,1), activation='elu', feature_maps=[16, 32, 64, 128, 256],
                        drop_values=[0.1,0.1,0.2,0.2,0.3], spatial_dropout=False, batch_norm=False,
-                       k_init='he_normal',num_outputs=1,pre_load_weights=False,pretrained_model=None,train_encoder=True,bottleneck_train=True,skip_connection_train=True,denoising=False):
+                       k_init='he_normal',num_outputs=1,pre_load_weights=False,pretrained_model=None,train_encoder=True,bottleneck_train=True,skip_connection_train=True,denoising=False,train_decoder=True):
     """Create 2D U-Net with Attention blocks.
        Based on `Attention U-Net: Learning Where to Look for the Pancreas <https://arxiv.org/abs/1804.03999>`_.
        Parameters
@@ -1677,21 +1741,21 @@ def Attention_U_Net_2D(image_shape = (None,None,1), activation='elu', feature_ma
    
     # DECODER
     for i in range(depth-1, -1, -1):
-        x = Conv2DTranspose(feature_maps[i], (2, 2), strides=(2, 2), padding='same') (x)
+        x = Conv2DTranspose(feature_maps[i], (2, 2), strides=(2, 2), padding='same',trainable=train_decoder) (x)
         attn = AttentionBlock(x, l[i], feature_maps[i], batch_norm,trainable=skip_connection_train)
         x = concatenate([x, attn])
-        x = Conv2D(feature_maps[i], (3, 3), activation=None, kernel_initializer=k_init, padding='same') (x)
-        x = BatchNormalization() (x) if batch_norm else x
-        x = Activation(activation) (x)
+        x = Conv2D(feature_maps[i], (3, 3), activation=None, kernel_initializer=k_init, padding='same',trainable=train_decoder) (x)
+        x = BatchNormalization(trainable=train_decoder) (x) if batch_norm else x
+        x = Activation(activation,trainable=train_decoder) (x)
         if drop_values is not None:
             if spatial_dropout:
-                x = SpatialDropout2D(drop_values[i]) (x)
+                x = SpatialDropout2D(drop_values[i],trainable=train_decoder) (x)
             else:
-                x = Dropout(drop_values[i]) (x)
+                x = Dropout(drop_values[i],trainable=train_decoder) (x)
 
-        x = Conv2D(feature_maps[i], (3, 3), activation=None, kernel_initializer=k_init, padding='same') (x)
-        x = BatchNormalization() (x) if batch_norm else x
-        x = Activation(activation) (x)
+        x = Conv2D(feature_maps[i], (3, 3), activation=None, kernel_initializer=k_init, padding='same',trainable=train_decoder) (x)
+        x = BatchNormalization(trainable=train_decoder) (x) if batch_norm else x
+        x = Activation(activation,trainable=train_decoder) (x)
 
 
     if denoising:
@@ -1762,14 +1826,14 @@ def AttentionBlock(x, shortcut, filters, batch_norm,trainable=False):
     x = Multiply(trainable=trainable)([x,psi])
     
     return x
-
+#@jit
 def gpu_select(GPU_availability,GPU):
   print('Se ha cargado las dependencias correctamente')
   if GPU_availability:
       os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID";
       os.environ["CUDA_VISIBLE_DEVICES"] = GPU;
   print('Se ha seleccionado la GPU:',GPU)
-
+#@jit
 def set_seed(seedValue=42):
   """Sets the seed on multiple python modules to obtain results as
   reproducible as possible.
@@ -1784,6 +1848,7 @@ def set_seed(seedValue=42):
 from skimage.util import img_as_ubyte
 from skimage import io
 from matplotlib import pyplot as plt
+#@jit
 def load_img(train_input_path,train_label_path):
     #loading and sorting the filenames in order to read the images
   train_input_filenames = [x for x in os.listdir( train_input_path) if x.endswith(".png") or x.endswith('.tif')]
@@ -1798,7 +1863,7 @@ def load_img(train_input_path,train_label_path):
   train_img = [ io.imread( train_input_path + '/' + x ) /255.0 for x in train_input_filenames ]
   train_lbl = [ io.imread( train_label_path + '/' + x ) /255.0 for x in train_label_filenames ]
   return train_img, train_lbl
-
+#@jit
 def prepare_training_data(imgs,lbls):
   #  input
   X = np.asarray(imgs)
@@ -1810,14 +1875,14 @@ def prepare_training_data(imgs,lbls):
   Y = np.expand_dims( Y, axis=-1 ) # add extra dimension
   print(Y[0].shape)
   return X,Y
-
+#@jit
 def evaluate_ranges(X):
   #@title
   values=[]
   for i in range(len(X[:,0,0,0])):
     values.append(np.max(X[i,:,:,:]))
   print('The range of max values is between:',np.min(values),'and',np.max(values))
-
+#@jit
 def prepare_test_data(test_img,test_lbl):
 
   X_test = [  np.expand_dims( append_pot2(x), axis=-1 )  for x in test_img ];
@@ -1827,6 +1892,8 @@ def prepare_test_data(test_img,test_lbl):
   print(Y_test[0].shape)
 
   return X_test,Y_test,test_lbl
+#@jit
+from PIL import Image
 
 def evaluate_test(X_test,test_lbl,model,save_img=False,path=None):
     IoU_Dataset12Dataset1_temp=[]
@@ -1840,11 +1907,8 @@ def evaluate_test(X_test,test_lbl,model,save_img=False,path=None):
       filtered_img=image[:,:,0]*filtered_img[:,:,0]
       if save_img:
         try:
-            plt.figure()
-            plt.imshow(np.int8(filtered_img[:,:,0]>0.5),'gray') 
-            plt.savefig(f'{path}/prediction_{str(i)}.png')
-        except:
-            print('Problems when saving test predictions')
+            Image.fromarray((filtered_img[:,:]*255).astype(np.uint8)).save(f'{path}/prediction_{str(i)}.png')   
+        except Exception as e: print(e)
     
       IoU_Dataset12Dataset1_temp.append(jaccard_index_final(test_lbl[i],filtered_img));
     return np.mean(np.nan_to_num(IoU_Dataset12Dataset1_temp))
@@ -1858,7 +1922,7 @@ from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
 from email import encoders
 
-
+#@jit
 def send_mail(send_from, send_to, subject, message, files=[],
               server="localhost", port=587, username='', password='',
               use_tls=True):
@@ -1905,7 +1969,7 @@ def send_mail(send_from, send_to, subject, message, files=[],
         print ("Email sent successfully!")
     except Exception as ex:
         print ("Something went wrong….",ex)
- 
+#@jit 
 def reduce_number_imgs_num(imgs,label_imgs,num_patches=1,normalize=True,imagenet=False):
     n=len(imgs)
     if imagenet:
