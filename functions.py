@@ -822,7 +822,7 @@ class CustomSaver(keras.callbacks.Callback):
         
     #@jit
     def on_epoch_end(self, epoch, logs={}):
-        if (epoch%5)==0:  # or save after some epoch, each k-th epoch etc.
+        if (epoch%2)==0:  # or save after some epoch, each k-th epoch etc.
             IoU_Dataset12Dataset1_temp=[]
             for i in range(0,len(self.Xtest)):
                 
@@ -857,7 +857,7 @@ class CustomSaver(keras.callbacks.Callback):
                     self.best_model=f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5'
                     self.top_epoch=epoch
                 else:
-                    #Ratio hasn't changed more than 5e-4 for 2 updates(i.e 10 epochs)
+                    #Ratio hasn't changed more than 5e-4 for 2 updates(i.e 4 epochs)
                     self.update_count+=1
                     if self.update_count>2:
                         #Stop the training as it may have converged to a value
@@ -874,32 +874,34 @@ class CustomSaver(keras.callbacks.Callback):
             print(f'{self.path_save}/model_E{epoch}_jaccard_{jaccard:.3f}')
     #@jit
     def on_train_end(self,logs={}):
+
         self.model.load_weights(self.best_model)
-        plt.figure()
-        plt.plot(self.x,self.IoU_test,color='black',marker='.',label='Target IoU');
-        plt.plot(self.top_epoch, self.IoU_test[int(self.x.index(self.top_epoch))], "ro",label='Optimal ratio model')
-        plt.title('Target segmentation during Fine-Tuning')
-        plt.xlabel('Number of epochs')
-        plt.ylabel('IoU')
+        fig, (ax1, ax2) = plt.subplots(2, sharex=True)
+        plt.subplot(2,1,1)
+        ax1.plot(self.x,self.IoU_test,color='black',marker='.',label='Target IoU');
+        ax1.plot(self.top_epoch, self.IoU_test[int(self.x.index(self.top_epoch))], "ro",label='Optimal ratio model')
         
-        plt.title('Target IoU evolution during Fine-Tuning')
-        plt.axhline(y=np.max(self.IoU_test), color='green', linestyle='dashed',label='Optimal IoU')
-        plt.legend()
         
-        plt.savefig('IoU_per_epoch_evolution{}.png'.format(datetime.datetime.now().time()))
-        plt.close()
-        plt.figure()
-        plt.plot(self.x,self.ratio,color='black',marker='.',label='Target Ratio');
-        plt.title('Target ratio evolution during Fine-Tuning')
-        plt.xlabel('Number of epochs')
-        plt.ylabel('Ratio')
-        plt.yscale('log')
+        ax1.ylabel('IoU')
         
-        plt.axhline(y=8.5e-3, color='green', linestyle='dashed',label='Goal Ratio')
-        plt.plot(self.top_epoch, self.ratio[int(self.x.index(self.top_epoch))], "ro",label='Optimal ratio model')
-        plt.legend()
-        plt.savefig('Ratio_per_epoch_evolution{}.png'.format(datetime.datetime.now().time()))
-        plt.close()
+        
+        ax1.axhline(y=np.max(self.IoU_test), color='green', linestyle='dashed',label='Optimal IoU')
+        ax1.legend()
+        
+        
+        
+        ax2.plot(self.x,self.ratio,color='black',marker='.',label='Target Ratio');
+        
+        ax2.xlabel('Number of epochs')
+        ax2.ylabel('Ratio')
+        ax2.yscale('log')
+        
+        #ax2.axhline(y=8.5e-3, color='green', linestyle='dashed',label='Goal Ratio')
+        ax2.plot(self.top_epoch, self.ratio[int(self.x.index(self.top_epoch))], "ro",label='Optimal ratio model')
+        ax2.legend()
+        fig.suptitle('Target segmentation during Fine-tuning')
+        fig.savefig('Target_evolution{}.png'.format(datetime.datetime.now().time()))
+        fig.close()
         
         morphology=pd.DataFrame()
         morphology['Epochs']=self.x
