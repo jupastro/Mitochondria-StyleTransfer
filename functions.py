@@ -882,7 +882,7 @@ class CustomSaver(keras.callbacks.Callback):
         ax1.plot(self.top_epoch, self.IoU_test[int(self.x.index(self.top_epoch))], "ro",label='Optimal ratio model')
         
         
-        ax1.ylabel('IoU')
+        ax1.set_ylabel('IoU')
         
         
         ax1.axhline(y=np.max(self.IoU_test), color='green', linestyle='dashed',label='Optimal IoU')
@@ -892,9 +892,9 @@ class CustomSaver(keras.callbacks.Callback):
         
         ax2.plot(self.x,self.ratio,color='black',marker='.',label='Target Ratio');
         
-        ax2.xlabel('Number of epochs')
-        ax2.ylabel('Ratio')
-        ax2.yscale('log')
+        ax2.set_xlabel('Number of epochs')
+        ax2.set_ylabel('Ratio')
+        ax2.set_yscale('log')
         
         #ax2.axhline(y=8.5e-3, color='green', linestyle='dashed',label='Goal Ratio')
         ax2.plot(self.top_epoch, self.ratio[int(self.x.index(self.top_epoch))], "ro",label='Optimal ratio model')
