@@ -761,9 +761,9 @@ def morphology_analysis(data,input):
         for v in props['area']: 
             
             ratio=v/area
-            if (ratio)>5e-3:
-                p_area.append(v)
-                ratio_objects_area.append(ratio)                                                                           
+            #if (ratio)>5e-3:
+            p_area.append(v)
+            ratio_objects_area.append(ratio)                                                                           
         for v in props['solidity']: p_solidity.append(v)                                                                   
         for v in props['eccentricity']: p_eccentricity.append(v)                                                           
         for v in props['orientation']: p_orientation.append(v)  
@@ -816,13 +816,13 @@ class CustomSaver(keras.callbacks.Callback):
         self.n_objects=[]
         self.ratio=[]
         self.update_count=0
-        self.dif=1000
+        self.tol=0.05
         self.past_ratio=1
 
         
     #@jit
     def on_epoch_end(self, epoch, logs={}):
-        if (epoch%2)==0:  # or save after some epoch, each k-th epoch etc.
+        if (epoch%5)==0:  # or save after some epoch, each k-th epoch etc.
             IoU_Dataset12Dataset1_temp=[]
             for i in range(0,len(self.Xtest)):
                 
@@ -850,20 +850,21 @@ class CustomSaver(keras.callbacks.Callback):
             self.median_area.append(gt_area_value_median)
             self.n_objects.append(gt_object_number)
             self.ratio.append(gt_ratio)
-            
-            if abs(gt_ratio-8.5e-3)<=self.dif:
-                #Restart count if there's an update
-                self.update_count=0
-                self.dif=abs(gt_ratio-8.5e-3)+0.0001 #add this to avoid getting stuck in a crossing point
-                self.best_model=f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5'
-                self.top_epoch=epoch
-            elif abs(gt_ratio-self.past_ratio)<5e-4 and epoch>20:
-                #Ratio hasn't changed more than 5e-4 for 2 updates(i.e 4 epochs)
-                self.update_count+=1
-                if self.update_count>2:
-                    #Stop the training as it may have converged to a value
-                    print("Training ratio is stable, so stopping training!!")   
-                    self.model.stop_training = True
+            if epoch>=10:
+                if  abs(gt_ratio-self.past_ratio)>=self.tol*gt_ratio:
+                    #Update if the difference between the actual and past ratio is  bigger than tol*actual_ratio 
+                    self.update_count=0
+                    self.best_model=f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5'
+                    self.top_epoch=epoch
+                else:
+                    #Ratio hasn't changed more than 5e-4 for 2 updates(i.e 10 epochs)
+                    self.update_count+=1
+                    if self.update_count>2:
+                        #Stop the training as it may have converged to a value
+                        print("Training ratio is stable, so stopping training!!")  
+                        self.best_model=f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5'
+                        self.top_epoch=epoch 
+                        self.model.stop_training = True
             self.past_ratio=gt_ratio
 
 
