@@ -876,8 +876,8 @@ class CustomSaver(keras.callbacks.Callback):
     def on_train_end(self,logs={}):
 
         self.model.load_weights(self.best_model)
-        fig, (ax1, ax2) = plt.subplots(2, sharex=True)
-        plt.subplot(2,1,1)
+        fig, (ax1, ax2) = plt.subplots(2, sharex=True,dpi=200)
+        
         ax1.plot(self.x,self.IoU_test,color='black',marker='.',label='Target IoU');
         ax1.plot(self.top_epoch, self.IoU_test[int(self.x.index(self.top_epoch))], "ro",label='Optimal ratio model')
         
@@ -900,7 +900,7 @@ class CustomSaver(keras.callbacks.Callback):
         ax2.plot(self.top_epoch, self.ratio[int(self.x.index(self.top_epoch))], "ro",label='Optimal ratio model')
         ax2.legend()
         fig.suptitle('Target segmentation during Fine-tuning')
-        fig.savefig('Target_evolution{}.png'.format(datetime.datetime.now().time()))
+        plt.savefig('Target_evolution{}.png'.format(datetime.datetime.now().time()))
         fig.close()
         
         morphology=pd.DataFrame()
