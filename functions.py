@@ -859,7 +859,7 @@ class CustomSaver(keras.callbacks.Callback):
                 else:
                     #Ratio hasn't changed more than 5e-4 for 2 updates(i.e 4 epochs)
                     self.update_count+=1
-                    if self.update_count>2:
+                    if self.update_count>5:
                         #Stop the training as it may have converged to a value
                         print("Training ratio is stable, so stopping training!!")  
                         self.best_model=f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5'
