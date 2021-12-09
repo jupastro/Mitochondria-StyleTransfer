@@ -901,7 +901,7 @@ class CustomSaver(keras.callbacks.Callback):
         ax2.legend()
         fig.suptitle('Target segmentation during Fine-tuning')
         plt.savefig('Target_evolution{}.png'.format(datetime.datetime.now().time()))
-        fig.close()
+        plt.close()
         
         morphology=pd.DataFrame()
         morphology['Epochs']=self.x
