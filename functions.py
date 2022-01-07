@@ -516,7 +516,7 @@ def UNet(input_size = (None,None,1),
          kernel_initializer = 'he_normal',
          dropout_value=0.2,
          average_pooling=True,
-         spatial_dropout=False,num_outputs=1,pre_load_weights=False,pretrained_model=None,train_encoder=True,bottleneck_freezing=False,denoising=False):
+         spatial_dropout=False,num_outputs=1,pre_load_weights=False,pretrained_model=None,train_encoder=True,train_bottleneck=False,train_decoder=True,denoising=False,skip_connection_training=True):
   """
   Create a U-Net for segmentation
        Args:
@@ -540,55 +540,55 @@ def UNet(input_size = (None,None,1),
 
   inputs = Input( input_size )
   # Encoder 
-  conv1 = Conv2D(filters, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(inputs)
-  conv1 = SpatialDropout2D(dropout_value[0])(conv1) if spatial_dropout else Dropout(dropout_value[0]) (conv1)
-  conv1 = Conv2D(filters, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(conv1)
-  pool1 = AveragePooling2D(pool_size=(2, 2))(conv1) if average_pooling else MaxPooling2D(pool_size=(2, 2))(conv1)
+  conv1 = Conv2D(filters, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_encoder)(inputs)
+  conv1 = SpatialDropout2D(dropout_value[0])(conv1) if spatial_dropout else Dropout(dropout_value[0],trainable=train_encoder) (conv1)
+  conv1 = Conv2D(filters, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_encoder)(conv1)
+  pool1 = AveragePooling2D(pool_size=(2, 2))(conv1) if average_pooling else MaxPooling2D(pool_size=(2, 2),trainable=train_encoder)(conv1)
   
-  conv2 = Conv2D(filters*2, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(pool1)
-  conv2 = SpatialDropout2D(dropout_value[1])(conv2) if spatial_dropout else Dropout(dropout_value[1]) (conv2)
-  conv2 = Conv2D(filters*2, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(conv2)
-  pool2 = AveragePooling2D(pool_size=(2, 2))(conv2) if average_pooling else MaxPooling2D(pool_size=(2, 2))(conv2)
+  conv2 = Conv2D(filters*2, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_encoder)(pool1)
+  conv2 = SpatialDropout2D(dropout_value[1])(conv2) if spatial_dropout else Dropout(dropout_value[1],trainable=train_encoder) (conv2)
+  conv2 = Conv2D(filters*2, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_encoder)(conv2)
+  pool2 = AveragePooling2D(pool_size=(2, 2))(conv2) if average_pooling else MaxPooling2D(pool_size=(2, 2),trainable=train_encoder)(conv2)
   
-  conv3 = Conv2D(filters*4, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(pool2)
-  conv3 = SpatialDropout2D(dropout_value[2])(conv3) if spatial_dropout else Dropout(dropout_value[2]) (conv3)
-  conv3 = Conv2D(filters*4, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(conv3)
-  pool3 = AveragePooling2D(pool_size=(2, 2))(conv3) if average_pooling else MaxPooling2D(pool_size=(2, 2))(conv3)
+  conv3 = Conv2D(filters*4, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_encoder)(pool2)
+  conv3 = SpatialDropout2D(dropout_value[2])(conv3) if spatial_dropout else Dropout(dropout_value[2],trainable=train_encoder) (conv3)
+  conv3 = Conv2D(filters*4, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_encoder)(conv3)
+  pool3 = AveragePooling2D(pool_size=(2, 2))(conv3) if average_pooling else MaxPooling2D(pool_size=(2, 2),trainable=train_encoder)(conv3)
   
-  conv4 = Conv2D(filters*8, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(pool3)
-  conv4 = SpatialDropout2D(dropout_value[3])(conv4) if spatial_dropout else Dropout(dropout_value[3])(conv4)
-  conv4 = Conv2D(filters*8, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(conv4)
-  pool4 = AveragePooling2D(pool_size=(2, 2))(conv4) if average_pooling else MaxPooling2D(pool_size=(2, 2))(conv4)
+  conv4 = Conv2D(filters*8, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_encoder)(pool3)
+  conv4 = SpatialDropout2D(dropout_value[3])(conv4) if spatial_dropout else Dropout(dropout_value[3],trainable=train_encoder)(conv4)
+  conv4 = Conv2D(filters*8, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_encoder)(conv4)
+  pool4 = AveragePooling2D(pool_size=(2, 2))(conv4) if average_pooling else MaxPooling2D(pool_size=(2, 2),trainable=train_encoder)(conv4)
 
   # Bottleneck
-  conv5 = Conv2D(filters*16, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(pool4)
-  conv5 = SpatialDropout2D(dropout_value[4])(conv5) if spatial_dropout else Dropout(dropout_value[4])(conv5)
-  conv5 = Conv2D(filters*16, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(conv5)
+  conv5 = Conv2D(filters*16, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_bottleneck)(pool4)
+  conv5 = SpatialDropout2D(dropout_value[4])(conv5) if spatial_dropout else Dropout(dropout_value[4],trainable=train_bottleneck)(conv5)
+  conv5 = Conv2D(filters*16, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_bottleneck)(conv5)
   
   # Decoder
-  up6 = Conv2DTranspose(filters*8, (2, 2), strides=(2, 2), padding='same') (conv5)
-  merge6 = concatenate([conv4,up6], axis = 3)
-  conv6 = Conv2D(filters*8, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(merge6)
-  conv6 = SpatialDropout2D(dropout_value[3])(conv6) if spatial_dropout else Dropout(dropout_value[3])(conv6)
-  conv6 = Conv2D(filters*8, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(conv6)
+  up6 = Conv2DTranspose(filters*8, (2, 2), strides=(2, 2), padding='same',trainable=train_decoder) (conv5)
+  merge6 = concatenate([conv4,up6], axis = 3,trainable=skip_connection_training)
+  conv6 = Conv2D(filters*8, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_decoder)(merge6)
+  conv6 = SpatialDropout2D(dropout_value[3])(conv6) if spatial_dropout else Dropout(dropout_value[3],trainable=train_decoder)(conv6)
+  conv6 = Conv2D(filters*8, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_decoder)(conv6)
 
-  up7 = Conv2DTranspose(filters*4, (2, 2), strides=(2, 2), padding='same') (conv6)
-  merge7 = concatenate([conv3,up7], axis = 3)
-  conv7 = Conv2D(filters*4, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(merge7)
-  conv7 = SpatialDropout2D(dropout_value[2])(conv7) if spatial_dropout else Dropout(dropout_value[2])(conv7)
-  conv7 = Conv2D(filters*4, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(conv7)
+  up7 = Conv2DTranspose(filters*4, (2, 2), strides=(2, 2), padding='same',trainable=train_decoder) (conv6)
+  merge7 = concatenate([conv3,up7], axis = 3,trainable=skip_connection_training)
+  conv7 = Conv2D(filters*4, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_decoder)(merge7)
+  conv7 = SpatialDropout2D(dropout_value[2])(conv7) if spatial_dropout else Dropout(dropout_value[2],trainable=train_decoder)(conv7)
+  conv7 = Conv2D(filters*4, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_decoder)(conv7)
 
-  up8 = Conv2DTranspose(filters*2, (2, 2), strides=(2, 2), padding='same') (conv7)
-  merge8 = concatenate([conv2,up8], axis = 3)
-  conv8 = Conv2D(filters*2, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(merge8)
-  conv8 = SpatialDropout2D(dropout_value[1])(conv8) if spatial_dropout else Dropout(dropout_value[1])(conv8)
-  conv8 = Conv2D(filters*2, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(conv8)
+  up8 = Conv2DTranspose(filters*2, (2, 2), strides=(2, 2), padding='same',trainable=train_decoder) (conv7)
+  merge8 = concatenate([conv2,up8], axis = 3,trainable=skip_connection_training)
+  conv8 = Conv2D(filters*2, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_decoder)(merge8)
+  conv8 = SpatialDropout2D(dropout_value[1])(conv8) if spatial_dropout else Dropout(dropout_value[1],trainable=train_decoder)(conv8)
+  conv8 = Conv2D(filters*2, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_decoder)(conv8)
 
-  up9 = Conv2DTranspose(filters, (2, 2), strides=(2, 2), padding='same') (conv8)
-  merge9 = concatenate([conv1,up9], axis = 3)
-  conv9 = Conv2D(filters, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(merge9)
-  conv9 = SpatialDropout2D(dropout_value[0])(conv9) if spatial_dropout else Dropout(dropout_value[0])(conv9)
-  conv9 = Conv2D(filters, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer)(conv9)
+  up9 = Conv2DTranspose(filters, (2, 2), strides=(2, 2), padding='same',trainable=train_decoder) (conv8)
+  merge9 = concatenate([conv1,up9], axis = 3,trainable=skip_connection_training)
+  conv9 = Conv2D(filters, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_decoder)(merge9)
+  conv9 = SpatialDropout2D(dropout_value[0])(conv9) if spatial_dropout else Dropout(dropout_value[0],trainable=train_decoder)(conv9)
+  conv9 = Conv2D(filters, (3,3), activation = activation, padding = 'same', kernel_initializer = kernel_initializer,trainable=train_decoder)(conv9)
   if denoising:
       outputs = Conv2D( num_outputs, (1, 1), activation='sigmoid') (conv9)
   else:
@@ -606,14 +606,15 @@ def UNet(input_size = (None,None,1),
        # model.get_layer(index=i).set_weights(pretrained_model.get_layer(index=i).get_weights())
         #print('Loaded pre-trained weights from layer',i,'of',len(model.layers))
   if train_encoder==False:
-        for i in range(0,16):  
-         model.get_layer(index=i).trainable=False
-        print('The encoder has been succesfully frozen')
-        if bottleneck_freezing:
-         model.get_layer(index=16).trainable=False
-         print('The bottleneck has been succesfully frozen')
-  #for layer in model.layers:
-   #      print(layer, layer.trainable)
+      model.get_layer(index=0).trainable=False
+#         for i in range(0,16):  
+#          model.get_layer(index=i).trainable=False
+#         print('The encoder has been succesfully frozen')
+#         if bottleneck_freezing:
+#          model.get_layer(index=16).trainable=False
+#          print('The bottleneck has been succesfully frozen')
+  for layer in model.layers:
+        print(layer, layer.trainable)
 
   return model
 
@@ -761,8 +762,8 @@ def morphology_analysis(data,input):
         for v in props['area']: 
             
             ratio=v/area
-            #if (ratio)>5e-3:
-            p_area.append(v)
+            if (ratio)>5e-3:
+                p_area.append(v)
             ratio_objects_area.append(ratio)                                                                           
         for v in props['solidity']: p_solidity.append(v)                                                                   
         for v in props['eccentricity']: p_eccentricity.append(v)                                                           
@@ -850,22 +851,31 @@ class CustomSaver(keras.callbacks.Callback):
             self.median_area.append(gt_area_value_median)
             self.n_objects.append(gt_object_number)
             self.ratio.append(gt_ratio)
+            # if epoch>=10:
+            #     if  abs(gt_ratio-self.past_ratio)>=self.tol*gt_ratio:
+            #         #Update if the difference between the actual and past ratio is  bigger than tol*actual_ratio 
+            #         self.update_count=0
+            #         self.best_model=f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5'
+            #         self.top_epoch=epoch
+            #     else:
+            #         #Ratio hasn't changed more than 5e-4 for 2 updates(i.e 4 epochs)
+            #         self.update_count+=1
+            #         if self.update_count>5:
+            #             #Stop the training as it may have converged to a value
+            #             print("Training ratio is stable, so stopping training!!")  
+            #             self.best_model=f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5'
+            #             self.top_epoch=epoch 
+            #             self.model.stop_training = True
+            # self.past_ratio=gt_ratio
             if epoch>=10:
-                if  abs(gt_ratio-self.past_ratio)>=self.tol*gt_ratio:
+                if  abs(gt_ratio-9e-3)<=abs(self.past_ratio-9e-3) and abs(gt_ratio-9e-3)>=0:
                     #Update if the difference between the actual and past ratio is  bigger than tol*actual_ratio 
-                    self.update_count=0
+                    
                     self.best_model=f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5'
                     self.top_epoch=epoch
-                else:
-                    #Ratio hasn't changed more than 5e-4 for 2 updates(i.e 4 epochs)
-                    self.update_count+=1
-                    if self.update_count>5:
-                        #Stop the training as it may have converged to a value
-                        print("Training ratio is stable, so stopping training!!")  
-                        self.best_model=f'{self.path_save}model_E{epoch}_jaccard_{jaccard:.3f}.h5'
-                        self.top_epoch=epoch 
-                        self.model.stop_training = True
-            self.past_ratio=gt_ratio
+                    self.past_ratio=gt_ratio
+                
+            
 
 
             
@@ -973,7 +983,7 @@ def train(X_train,Y_train,X_val,Y_val,numEpochs,output_channels,patience,lr,min_
   dropout_value=0.2
   if model_name == 'UNet':
       model = UNet( filters=num_filters, dropout_value=dropout_value,
-                   spatial_dropout=False, average_pooling=False, activation='elu',num_outputs=output_channels,pre_load_weights=pre_load_weights,pretrained_model=pretrained_model,train_encoder=train_encoder,bottleneck_freezing=bottleneck_freezing,denoising=Denoising)
+                   spatial_dropout=False, average_pooling=False, activation='elu',num_outputs=output_channels,pre_load_weights=pre_load_weights,pretrained_model=pretrained_model,train_encoder=train_encoder,train_bottleneck=bottleneck_train,train_decoder=train_decoder,denoising=Denoising)
   elif model_name == 'ResUNet':
       model = ResUNet( filters=num_filters, batchnorm=False, spatial_dropout=True,
                       average_pooling=False, activation='elu', separable=False,
@@ -1831,11 +1841,11 @@ def AttentionBlock(x, shortcut, filters, batch_norm,trainable=False):
     return x
 #@jit
 def gpu_select(GPU_availability,GPU):
-  print('Se ha cargado las dependencias correctamente')
+  
   if GPU_availability:
       os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID";
       os.environ["CUDA_VISIBLE_DEVICES"] = GPU;
-  print('Se ha seleccionado la GPU:',GPU)
+  print('GPU:'+GPU+' was selected')
 #@jit
 def set_seed(seedValue=42):
   """Sets the seed on multiple python modules to obtain results as
@@ -1998,3 +2008,45 @@ def reduce_number_imgs_num(imgs,label_imgs,num_patches=1,normalize=True,imagenet
     print('Created list with '+str(len(x))+' images')
    
     return x,y
+
+from skimage.feature import hog
+
+def hog_image(img,orientations=6,pixels_per_cell=(4,4),cells_per_block=(2,2)):
+    fd, output = hog(img, orientations=orientations, pixels_per_cell=pixels_per_cell,
+                	cells_per_block=cells_per_block, visualize=True, multichannel=False)
+    return output
+
+
+def visualize_feature_maps(model,layer,normalize=True,n_filters=6,save_img=False,path=None):
+
+	# model: this is a already keras' loaded model not a h5 file
+	# layer: the layer whose weights we want to visualize
+	# normalize: whether to normalize the weights around 0 to be able to plot them as an image
+	# n_filters: the number of filters from a layer we want to visualize
+	# save_img:boolean indicating whether to save the output 
+	# path: str defining the path and name of hte output file
+
+
+    # retrieve weights from the second hidden layer
+    filters, biases = model.layers[layer].get_weights()
+    # normalize filter values to 0-1 so we can visualize them
+    if normalize:
+        f_min, f_max = filters.min(), filters.max()
+        filters = (filters - f_min) / (f_max - f_min)
+    # plot first few filters
+    ix = 1
+    for i in range(n_filters):
+        # get the filter
+        f = filters[:, :, :, i]
+        # plot each channel separately
+        for j in range(len(f[0,0,:])):
+            # specify subplot and turn of axis
+            ax = plt.subplot(n_filters, len(f[0,0,:]), ix)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            # plot filter channel in grayscale
+            plt.imshow(f[:, :, j], cmap='gray')
+            ix += 1
+    # show the figure
+    plt.show()
+	
